@@ -269,30 +269,32 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
     }
     
     // Math functions
-    if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
-	if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
-    if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
-    if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
-    if (_name == "power") { _value = power; return { found: true, value: _value }; }
-    if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
-    if (_name == "round") { _value = round; return { found: true, value: _value }; }
-    if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
-    if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
-    if (_name == "random") { _value = random; return { found: true, value: _value }; }
-    if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
-    if (_name == "string") { _value = string; return { found: true, value: _value }; }
-    if (_name == "real") { _value = real; return { found: true, value: _value }; }
-    if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
-    if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
-    if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
-    if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
-    if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
-    if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
-    if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
-    if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
-    
-    _found = false;
-    return { found: _found, value: undefined };
+    //if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
+	//if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
+    //if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
+    //if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
+    //if (_name == "power") { _value = power; return { found: true, value: _value }; }
+    //if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
+    //if (_name == "round") { _value = round; return { found: true, value: _value }; }
+    //if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
+    //if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
+    //if (_name == "random") { _value = random; return { found: true, value: _value }; }
+    //if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
+    //if (_name == "string") { _value = string; return { found: true, value: _value }; }
+    //if (_name == "real") { _value = real; return { found: true, value: _value }; }
+    //if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
+    //if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
+    //if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
+    //if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
+    //if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
+    //if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
+    //if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
+    //if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
+	_value = real(asset_get_index(_name));
+	return { found: true, value: _value };
+	
+    //_found = false;
+    //return { found: _found, value: undefined };
 }
 
 function gmlvm_vm_context(_self, _other) constructor {
