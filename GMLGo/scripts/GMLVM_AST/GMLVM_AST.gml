@@ -1,0 +1,666 @@
+function gmlvm_number_node(_value, _line = -1, _column = -1) constructor {
+    type   = "number";
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        return value;
+    };
+}
+
+function gmlvm_string_node(_value, _line = -1, _column = -1) constructor {
+    type   = "string";
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        return value;
+    };
+}
+
+function gmlvm_var_node(_name, _is_static = false, _line = -1, _column = -1) constructor {
+    type      = "var";
+    name      = _name;
+    is_static = _is_static;
+    line      = _line;
+    column    = _column;
+    
+    Execute = function(_ctx) {
+        if (name == "self") return _ctx.GetSelf();
+        if (name == "other") return _ctx.GetOther();
+        return _ctx.GetVar(name);
+    };
+}
+
+function gmlvm_binary_op_node(_op, _left, _right, _line = -1, _column = -1) constructor {
+    type   = "binary_op";
+    op     = _op;
+    left   = _left;
+    right  = _right;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _l = gmlvm_vm_evaluate(left, _ctx);
+        var _r = gmlvm_vm_evaluate(right, _ctx);
+        
+        // Handle undefined values
+        if (_l == undefined) {
+            gmlvm_warning("undefined_binary_left", "Left operand is undefined in binary op '" + op + "' at line " + string(line));
+            _l = 0;
+        }
+        if (_r == undefined) {
+            gmlvm_warning("undefined_binary_right", "Right operand is undefined in binary op '" + op + "' at line " + string(line));
+            _r = 0;
+        }
+        
+        switch (op) {
+            case "+":  
+                if (is_string(_l) || is_string(_r)) {
+                    return string(_l) + string(_r);
+                }
+                return _l + _r;
+            case "-":  return _l - _r;
+            case "*":  return _l * _r;
+            case "/":  return _l / _r;
+            case "%":  return _l % _r;
+            case "==": return _l == _r;
+            case "!=": return _l != _r;
+            case "<":  return _l < _r;
+            case ">":  return _l > _r;
+            case "<=": return _l <= _r;
+            case ">=": return _l >= _r;
+            case "&&": return _l && _r;
+            case "||": return _l || _r;
+            case "<<": return _l << _r;
+            case ">>": return _l >> _r;
+            case "&":  return _l & _r;
+            case "|":  return _l | _r;
+            case "^":  return _l ^ _r;
+            default:
+                gmlvm_warning("unknown_operator", "Unknown operator: " + op + " at line " + string(line));
+                return undefined;
+        }
+    };
+}
+
+function gmlvm_unary_op_node(_op, _operand, _line = -1, _column = -1) constructor {
+    type    = "unary_op";
+    op      = _op;
+    operand = _operand;
+    line    = _line;
+    column  = _column;
+    
+    Execute = function(_ctx) {
+        var _val = gmlvm_vm_evaluate(operand, _ctx);
+        
+        // handle undefined values for increment/decrement
+        if (_val == undefined) {
+            _val = 0;
+        }
+        
+        switch (op) {
+            case "!": return !_val;
+            case "-": return -_val;
+            case "~": return ~_val;
+            case "++":  // Prefix increment
+                if (operand.type == "var") {
+                    var _new = _val + 1;
+                    _ctx.SetVar(operand.name, _new);
+                    return _new;
+                }
+                return _val + 1;
+            case "--":  // Prefix decrement
+                if (operand.type == "var") {
+                    var _new = _val - 1;
+                    _ctx.SetVar(operand.name, _new);
+                    return _new;
+                }
+                return _val - 1;
+            default:
+                return undefined;
+        }
+    };
+}
+
+function gmlvm_block_node(_statements, _line = -1, _column = -1) constructor {
+    type       = "block";
+    statements = _statements;
+    line       = _line;
+    column     = _column;
+    
+    Execute = function(_ctx) {
+        var _result = undefined;
+        
+        for (var _i = 0; _i < array_length(statements); _i++) {
+            var _stmt = statements[_i];
+            _result = gmlvm_vm_evaluate(_stmt, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                var _type = _result.type;
+                if (_type == "return" || _type == "break" || _type == "continue") {
+                    return _result;
+                }
+            }
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_assign_node(_target, _value, _line = -1, _column = -1) constructor {
+    type   = "assign";
+    target = _target;
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _val = undefined;
+        if (value != undefined) {
+            _val = gmlvm_vm_evaluate(value, _ctx);
+        } else {
+            // Variable declared without initializer - leave as undefined
+            _val = undefined;
+        }
+        
+        if (target.type == "var") {
+            if (target.is_static) {
+                _ctx.SetStatic(target.name, _val);
+            } else {
+                _ctx.SetVar(target.name, _val);
+            }
+        } else if (target.type == "access") {
+            gmlvm_vm_set_access(target, _val, _ctx);
+        }
+        
+        return _val;
+    };
+}
+
+function gmlvm_compound_assign_node(_target, _op, _value, _line = -1, _column = -1) constructor {
+    type   = "compound_assign";
+    target = _target;
+    op     = _op;
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _current = undefined;
+        
+        if (target.type == "var") {
+            _current = _ctx.GetVar(target.name);
+        } else if (target.type == "access") {
+            _current = gmlvm_vm_get_access(target, _ctx);
+        }
+        
+        // Handle undefined
+        if (_current == undefined) {
+            _current = 0;
+        }
+        
+        var _r = gmlvm_vm_evaluate(value, _ctx);
+        if (_r == undefined) {
+            _r = 0;
+        }
+        
+        var _new = _current;
+        
+        switch (op) {
+            case "+=": _new = _current + _r; break;
+            case "-=": _new = _current - _r; break;
+            case "*=": _new = _current * _r; break;
+            case "/=": _new = _current / _r; break;
+            case "%=": _new = _current % _r; break;
+        }
+        
+        if (target.type == "var") {
+            _ctx.SetVar(target.name, _new);
+        } else if (target.type == "access") {
+            gmlvm_vm_set_access(target, _new, _ctx);
+        }
+        
+        return _new;
+    };
+}
+
+function gmlvm_if_node(_cond, _then_block, _else_block) constructor {
+    type       = "if";
+    cond       = _cond;
+    then_block = _then_block;
+    else_block = _else_block;
+    
+    static Execute = function(_ctx) {
+        var _c = gmlvm_vm_evaluate(cond, _ctx);
+        
+        if (_c) {
+            return gmlvm_vm_evaluate(then_block, _ctx);
+        } else if (else_block != undefined) {
+            return gmlvm_vm_evaluate(else_block, _ctx);
+        }
+        
+        return undefined;
+    };
+}
+
+function gmlvm_while_node(_cond, _body, _line = -1, _column = -1) constructor {
+    type = "while";
+    cond = _cond;
+    body = _body;
+    line = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _result = undefined;
+        
+        while (gmlvm_vm_evaluate(cond, _ctx)) {
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                if (_result.type == "break") {
+                    // Break exits the loop, return the last value (not the interrupt)
+                    return undefined;
+                } else if (_result.type == "continue") {
+                    continue;
+                } else if (_result.type == "return") {
+                    return _result;
+                }
+            }
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_for_node(_init, _cond, _step, _body, _line = -1, _column = -1) constructor {
+    type = "for";
+    init = _init;
+    cond = _cond;
+    step = _step;
+    body = _body;
+    line = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _result = undefined;
+        
+        if (init != undefined) {
+            gmlvm_vm_evaluate(init, _ctx);
+        }
+        
+        while (true) {
+            if (cond != undefined) {
+                if (!gmlvm_vm_evaluate(cond, _ctx)) {
+                    break;
+                }
+            }
+            
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                if (_result.type == "break") {
+                    _result = undefined;
+                    break;
+                } else if (_result.type == "continue") {
+                    // Continue to step
+                } else if (_result.type == "return") {
+                    return _result;
+                }
+            }
+            
+            if (step != undefined) {
+                gmlvm_vm_evaluate(step, _ctx);
+            }
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_repeat_node(_count, _body) constructor {
+    type  = "repeat";
+    count = _count;
+    body  = _body;
+    
+    static Execute = function(_ctx) {
+        var _result = undefined;
+        var _c = gmlvm_vm_evaluate(count, _ctx);
+        
+        for (var _i = 0; _i < _c; _i++) {
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                if (_result.type == "break") {
+                    break;
+                } else if (_result.type == "continue") {
+                    continue;
+                } else if (_result.type == "return") {
+                    return _result;
+                }
+            }
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_switch_node(_expr, _cases, _line = -1, _column = -1) constructor {
+    type  = "switch";
+    expr  = _expr;
+    cases = _cases;
+    line  = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _val = gmlvm_vm_evaluate(expr, _ctx);
+        var _result = undefined;
+        var _matched = false;
+        
+        for (var _i = 0; _i < array_length(cases); _i++) {
+            var _case = cases[_i];
+            var _case_val = _case.value;
+            
+            if (!_matched) {
+                if (_case_val == "default") {
+                    _matched = true;
+                } else {
+                    var _cv = gmlvm_vm_evaluate(_case_val, _ctx);
+                    if (_cv == _val) {
+                        _matched = true;
+                    }
+                }
+            }
+            
+            if (_matched) {
+                _result = gmlvm_vm_evaluate(_case.body, _ctx);
+                
+                if (is_struct(_result) && struct_exists(_result, "type")) {
+                    if (_result.type == "break") {
+                        break;
+                    } else if (_result.type == "return") {
+                        return _result;
+                    }
+                }
+            }
+        }
+        
+        // Don't return the interrupt
+        if (is_struct(_result) && struct_exists(_result, "type") && _result.type == "break") {
+            return undefined;
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_return_node(_value) constructor {
+    type  = "return";
+    value = _value;
+    
+    static Execute = function(_ctx) {
+        var _val = undefined;
+        if (value != undefined) {
+            _val = gmlvm_vm_evaluate(value, _ctx);
+        }
+        return new gmlvm_interrupt("return", _val);
+    };
+}
+
+function gmlvm_break_node() constructor {
+    type = "break";
+    
+    static Execute = function(_ctx) {
+        return new gmlvm_interrupt("break");
+    };
+}
+
+function gmlvm_continue_node() constructor {
+    type = "continue";
+    
+    static Execute = function(_ctx) {
+        return new gmlvm_interrupt("continue");
+    };
+}
+
+function gmlvm_array_node(_elements, _line = -1, _column = -1) constructor {
+    type     = "array";
+    elements = _elements;
+    line     = _line;
+    column   = _column;
+    
+    static Execute = function(_ctx) {
+        var _arr = [];
+        for (var _i = 0; _i < array_length(elements); _i++) {
+            _arr[_i] = gmlvm_vm_evaluate(elements[_i], _ctx);
+        }
+        return _arr;
+    };
+}
+
+function gmlvm_struct_node(_fields, _line = -1, _column = -1) constructor {
+    type   = "struct";
+    fields = _fields;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _struct = {};
+        for (var _i = 0; _i < array_length(fields); _i++) {
+            var _field = fields[_i];
+            var _key = _field.key;
+            var _val = gmlvm_vm_evaluate(_field.value, _ctx);
+            _struct[$ _key] = _val;
+        }
+        return _struct;
+    };
+}
+
+function gmlvm_access_node(_target, _index, _kind) constructor {
+    type   = "access";
+    target = _target;
+    index  = _index;
+    kind   = _kind;   // "bracket", "dot"
+    
+    static Execute = function(_ctx) {
+        return gmlvm_vm_get_access(self, _ctx);
+    };
+}
+
+function gmlvm_call_node(_callee, _args, _line = -1, _column = -1) constructor {
+    type   = "call";
+    callee = _callee;
+    args   = _args;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _func = gmlvm_vm_evaluate(callee, _ctx);
+        
+        var _arg_values = [];
+        for (var _i = 0; _i < array_length(args); _i++) {
+            _arg_values[_i] = gmlvm_vm_evaluate(args[_i], _ctx);
+        }
+        
+        return gmlvm_vm_call(_func, _arg_values, _ctx);
+    };
+}
+
+function gmlvm_function_node(_name, _params, _body, _is_constructor = false, _inherit = undefined, _inherit_args = undefined, _line = -1, _column = -1) constructor {
+    type           = "function";
+    name           = _name;
+    params         = _params;
+    body           = _body;
+    is_constructor = _is_constructor;
+    inherit        = _inherit;
+    inherit_args   = _inherit_args;
+    line           = _line;
+    column         = _column;
+    
+    Execute = function(_ctx) {
+        // capturing current locals for closure
+        var _captured_locals = {};
+        var _names = struct_get_names(_ctx.locals);
+        for (var _i = 0; _i < array_length(_names); _i++) {
+            var _n = _names[_i];
+            _captured_locals[$ _n] = _ctx.locals[$ _n];
+        }
+        
+        var _func_statics = {};
+        var _captured_self = _ctx.GetSelf();
+        var _captured_other = _ctx.GetOther();
+        
+        var _func = {
+            __gmlvm_type: "function",
+            __gmlvm_name: name,
+            __gmlvm_params: params,
+            __gmlvm_body: body,
+            __gmlvm_is_constructor: is_constructor,
+            __gmlvm_inherit: inherit,
+            __gmlvm_inherit_args: inherit_args,
+            __gmlvm_statics: _func_statics,
+            __gmlvm_captured_locals: _captured_locals,
+            __gmlvm_self: _captured_self,
+            __gmlvm_other: _captured_other,
+            __gmlvm_instance_id: string(current_time) + "_" + string(random(1000000))
+        };
+        
+        return _func;
+    };
+}
+
+function gmlvm_try_node(_try_block, _catch_var, _catch_block, _finally_block, _line = -1, _column = -1) constructor {
+    type          = "try";
+    try_block     = _try_block;
+    catch_var     = _catch_var;
+    catch_block   = _catch_block;
+    finally_block = _finally_block;
+    line          = _line;
+    column        = _column;
+    
+    static Execute = function(_ctx) {
+        var _result = undefined;
+        var _error = undefined;
+        var _caught = false;
+        
+        try {
+            _result = gmlvm_vm_evaluate(try_block, _ctx);
+        } catch (_err) {
+            _error = _err;
+            _caught = true;
+            
+            if (catch_block != undefined) {
+                _ctx.PushScope();
+                if (catch_var != "") {
+                    _ctx.locals[$ catch_var] = _error;
+                }
+                _result = gmlvm_vm_evaluate(catch_block, _ctx);
+                _ctx.PopScope();
+            }
+        } finally {
+            if (finally_block != undefined) {
+                gmlvm_vm_evaluate(finally_block, _ctx);
+            }
+        }
+        
+        if (_caught && catch_block == undefined) {
+            throw _error;
+        }
+        
+        return _result;
+    };
+}
+
+function gmlvm_throw_node(_expr, _line = -1, _column = -1) constructor {
+    type   = "throw";
+    expr   = _expr;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _val = gmlvm_vm_evaluate(expr, _ctx);
+        throw _val;
+    };
+}
+
+function gmlvm_new_node(_constructor, _args, _line = -1, _column = -1) constructor {
+    type        = "new";
+    constructor = _constructor;
+    args        = _args;
+    line        = _line;
+    column      = _column;
+    
+    static Execute = function(_ctx) {
+        var _ctor = gmlvm_vm_evaluate(constructor, _ctx);
+        
+        var _arg_values = [];
+        for (var _i = 0; _i < array_length(args); _i++) {
+            _arg_values[_i] = gmlvm_vm_evaluate(args[_i], _ctx);
+        }
+        
+        if (!is_struct(_ctor) || !struct_exists(_ctor, "__gmlvm_type") || _ctor.__gmlvm_type != "function") {
+            show_debug_message("VM Error: Cannot use 'new' on non-function value");
+            return {};
+        }
+        
+        var _is_constructor = _ctor.__gmlvm_is_constructor;
+        _ctor.__gmlvm_is_constructor = true;
+        
+        var _instance = gmlvm_vm_call_gmlvm_function(_ctor, _arg_values, _ctx);
+        
+        _ctor.__gmlvm_is_constructor = _is_constructor;
+        
+        return _instance;
+    };
+}
+
+function gmlvm_static_init_node(_name, _value, _line = -1, _column = -1) constructor {
+    type   = "static_init";
+    name   = _name;
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        _ctx.MarkStatic(name);
+        
+        if (!struct_exists(_ctx.statics, name)) {
+            var _val = undefined;
+            if (value != undefined) {
+                _val = gmlvm_vm_evaluate(value, _ctx);
+            }
+            _ctx.statics[$ name] = _val;
+        }
+        return _ctx.statics[$ name];
+    };
+}
+
+function gmlvm_postfix_op_node(_op, _operand, _line = -1, _column = -1) constructor {
+    type    = "postfix_op";
+    op      = _op;
+    operand = _operand;
+    line    = _line;
+    column  = _column;
+    
+    Execute = function(_ctx) {
+        var _val = gmlvm_vm_evaluate(operand, _ctx);
+        
+        if (_val == undefined) {
+            _val = 0;
+        }
+        
+        var _old_val = _val;
+        
+        if (operand.type == "var") {
+            if (op == "++") {
+                _ctx.SetVar(operand.name, _val + 1);
+            } else {
+                _ctx.SetVar(operand.name, _val - 1);
+            }
+        }
+        
+        return _old_val;
+    };
+}

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"GMLVM_Parser",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"GMLVM_Parser",
+  "parent":{
+    "name":"GMLVM",
+    "path":"folders/GMLVM.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

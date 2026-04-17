@@ -1,5 +1,5 @@
 //show_debug_message("=== Simple Struct Literal ===");
-//gmlp_run(@"
+//gmlvmp_run(@"
 //testStruct = { x: 100 };
 //");
 //show_debug_message("testStruct: " + string(is_struct(testStruct)));
@@ -8,61 +8,61 @@
 //}
 
 show_debug_message("=== Basic Arithmetic and Precedence ===");
-var _test1 = gml_run(@"
+var _test1 = gmlvm_run(@"
 return 2 + 3 * 4;
 ");
 show_debug_message("1. Arithmetic precedence: " + string(_test1) + " (expected 14)");
 
-var _test2 = gml_run(@"
+var _test2 = gmlvm_run(@"
 return (2 + 3) * 4;
 ");
 show_debug_message("2. Parentheses: " + string(_test2) + " (expected 20)");
 
-var _test3 = gml_run(@"
+var _test3 = gmlvm_run(@"
 return 10 / 3;
 ");
 show_debug_message("3. Division: " + string(_test3) + " (expected 3.33...)");
 
-var _test4 = gml_run(@"
+var _test4 = gmlvm_run(@"
 return 10 % 3;
 ");
 show_debug_message("4. Modulo: " + string(_test4) + " (expected 1)");
 
 show_debug_message("=== String Operations ===");
-var _test5 = gml_run(@"
+var _test5 = gmlvm_run(@"
 return 'Hello' + ' ' + 'World';
 ");
 show_debug_message("5. String concatenation: " + string(_test5) + " (expected Hello World)");
 
-var _test6 = gml_run(@"
+var _test6 = gmlvm_run(@"
 var name = 'Player';
 return 'Welcome, ' + name + '!';
 ");
 show_debug_message("6. String with variable: " + string(_test6) + " (expected Welcome, Player!)");
 
 show_debug_message("=== Comparison and Logical OperatorsComparison and Logical Operators ===");
-var _test7 = gml_run(@"
+var _test7 = gmlvm_run(@"
 return 5 > 3;
 ");
 show_debug_message("7. Greater than: " + string(_test7) + " (expected 1)");
 
-var _test8 = gml_run(@"
+var _test8 = gmlvm_run(@"
 return 5 == 5 && 3 < 10;
 ");
 show_debug_message("8. Logical AND: " + string(_test8) + " (expected 1)");
 
-var _test9 = gml_run(@"
+var _test9 = gmlvm_run(@"
 return 5 == 3 || 10 > 5;
 ");
 show_debug_message("9. Logical OR: " + string(_test9) + " (expected 1)");
 
-var _test10 = gml_run(@"
+var _test10 = gmlvm_run(@"
 return !(5 == 3);
 ");
 show_debug_message("10. Logical NOT: " + string(_test10) + " (expected 1)");
 
 show_debug_message("=== If/Else Statements ===");
-var _test11 = gml_run(@"
+var _test11 = gmlvm_run(@"
 var x = 15;
 if (x > 10) {
     return 'big';
@@ -72,7 +72,7 @@ if (x > 10) {
 ");
 show_debug_message("11. If/Else true branch: " + string(_test11) + " (expected big)");
 
-var _test12 = gml_run(@"
+var _test12 = gmlvm_run(@"
 var x = 5;
 if (x > 10) {
     return 'big';
@@ -82,7 +82,7 @@ if (x > 10) {
 ");
 show_debug_message("12. If/Else false branch: " + string(_test12) + " (expected small)");
 
-var _test13 = gml_run(@"
+var _test13 = gmlvm_run(@"
 var score = 85;
 var grade;
 if (score >= 90) {
@@ -99,7 +99,7 @@ return grade;
 show_debug_message("13. Else-if chain: " + string(_test13) + " (expected B)");
 
 show_debug_message("=== While Loops ===");
-var _test14 = gml_run(@"
+var _test14 = gmlvm_run(@"
 var sum = 0;
 var i = 1;
 while (i <= 5) {
@@ -110,7 +110,7 @@ return sum;
 ");
 show_debug_message("14. While loop sum: " + string(_test14) + " (expected 15)");
 
-var _test15 = gml_run(@"
+var _test15 = gmlvm_run(@"
 var i = 10;
 var result = '';
 while (i > 0) {
@@ -122,7 +122,7 @@ return result;
 show_debug_message("15. While countdown: " + string(_test15) + " (expected 10 8 6 4 2 )");
 
 show_debug_message("=== For Loops ===");
-var _test16 = gml_run(@"
+var _test16 = gmlvm_run(@"
 var sum = 0;
 for (var i = 1; i <= 5; i++) {
     sum += i;
@@ -131,7 +131,7 @@ return sum;
 ");
 show_debug_message("16. For loop sum: " + string(_test16) + " (expected 15)");
 
-var _test17 = gml_run(@"
+var _test17 = gmlvm_run(@"
 var result = '';
 for (var i = 0; i < 5; i++) {
     result += string(i) + ',';
@@ -140,7 +140,7 @@ return result;
 ");
 show_debug_message("17. For loop string: " + string(_test17) + " (expected 0,1,2,3,4,)");
 
-var _test18 = gml_run(@"
+var _test18 = gmlvm_run(@"
 for (var i = 0; i < 3; i++) {
     for (var j = 0; j < 2; j++) {
         // nested loop
@@ -151,7 +151,7 @@ return i * j;
 show_debug_message("18. Nested loops: " + string(_test18) + " (expected 6)");
 
 show_debug_message("=== Break and Continue ===");
-var _test19 = gml_run(@"
+var _test19 = gmlvm_run(@"
 var sum = 0;
 for (var i = 1; i <= 10; i++) {
     if (i == 6) break;
@@ -161,7 +161,7 @@ return sum;
 ");
 show_debug_message("19. Break: " + string(_test19) + " (expected 15)");
 
-var _test20 = gml_run(@"
+var _test20 = gmlvm_run(@"
 var sum = 0;
 for (var i = 1; i <= 5; i++) {
     if (i == 3) continue;
@@ -172,20 +172,20 @@ return sum;
 show_debug_message("20. Continue: " + string(_test20) + " (expected 12)");
 
 show_debug_message("=== Arrays ===");
-var _test21 = gml_run(@"
+var _test21 = gmlvm_run(@"
 var arr = [10, 20, 30, 40, 50];
 return arr[2];
 ");
 show_debug_message("21. Array access: " + string(_test21) + " (expected 30)");
 
-var _test22 = gml_run(@"
+var _test22 = gmlvm_run(@"
 var arr = [1, 2, 3];
 arr[1] = 99;
 return arr[0] + arr[1] + arr[2];
 ");
 show_debug_message("22. Array assignment: " + string(_test22) + " (expected 103)");
 
-var _test23 = gml_run(@"
+var _test23 = gmlvm_run(@"
 var arr = [];
 for (var i = 0; i < 5; i++) {
     arr[i] = i * 10;
@@ -195,7 +195,7 @@ return arr[3];
 show_debug_message("23. Array in loop: " + string(_test23) + " (expected 30)");
 
 show_debug_message("=== Structs ===");
-var _test24 = gml_run(@"
+var _test24 = gmlvm_run(@"
 var player = {
     name: 'Hero',
     hp: 100,
@@ -205,14 +205,14 @@ return player.name;
 ");
 show_debug_message("24. Struct property access: " + string(_test24) + " (expected Hero)");
 
-var _test25 = gml_run(@"
+var _test25 = gmlvm_run(@"
 var player = { name: 'Hero', hp: 100 };
 player.hp -= 20;
 return player.hp;
 ");
 show_debug_message("25. Struct property modification: " + string(_test25) + " (expected 80)");
 
-var _test26 = gml_run(@"
+var _test26 = gmlvm_run(@"
 var obj = {
     x: 10,
     y: 20
@@ -222,7 +222,7 @@ return obj.x + obj.y;
 show_debug_message("26. Struct shorthand: " + string(_test26) + " (expected 30)");
 
 show_debug_message("=== Functions ===");
-var _test27 = gml_run(@"
+var _test27 = gmlvm_run(@"
 function greet(name) {
     return 'Hello, ' + name + '!';
 }
@@ -230,7 +230,7 @@ return greet('World');
 ");
 show_debug_message("27. Function call: " + string(_test27) + " (expected Hello, World!)");
 
-var _test28 = gml_run(@"
+var _test28 = gmlvm_run(@"
 function factorial(n) {
     if (n <= 1) return 1;
     return n * factorial(n - 1);
@@ -239,7 +239,7 @@ return factorial(5);
 ");
 show_debug_message("28. Recursion: " + string(_test28) + " (expected 120)");
 
-var _test29 = gml_run(@"
+var _test29 = gmlvm_run(@"
 function makeAdder(x) {
     return function(y) {
         return x + y;
@@ -251,7 +251,7 @@ return add5(10);
 show_debug_message("29. Closure: " + string(_test29) + " (expected 15)");
 
 show_debug_message("=== Switch Statement ===");
-var _test30 = gml_run(@"
+var _test30 = gmlvm_run(@"
 var fruit = 'apple';
 var result;
 switch (fruit) {
@@ -271,7 +271,7 @@ return result;
 ");
 show_debug_message("30. Switch case: " + string(_test30) + " (expected red)");
 
-var _test31 = gml_run(@"
+var _test31 = gmlvm_run(@"
 var value = 5;
 var result = '';
 switch (value) {
@@ -292,7 +292,7 @@ return result;
 show_debug_message("31. Switch fallthrough: " + string(_test31) + " (expected BC)");
 
 show_debug_message("=== Try/Catch/Throw ===");
-var _test32 = gml_run(@"
+var _test32 = gmlvm_run(@"
 try {
     throw 'oops';
 } catch (e) {
@@ -301,7 +301,7 @@ try {
 ");
 show_debug_message("32. Try/Catch: " + string(_test32) + " (expected Caught: oops)");
 
-var _test33 = gml_run(@"
+var _test33 = gmlvm_run(@"
 var result = '';
 try {
     result += 'A';
@@ -317,7 +317,7 @@ return result;
 show_debug_message("33. Try/Catch/Finally: " + string(_test33) + " (expected ACD)");
 
 show_debug_message("=== Constructors ===");
-var _test34 = gml_run(@"
+var _test34 = gmlvm_run(@"
 function Vector2(x, y) constructor {
     self.x = x;
     self.y = y;
@@ -331,7 +331,7 @@ return v.length();
 ");
 show_debug_message("34. Constructor with method: " + string(_test34) + " (expected 5)");
 
-var _test35 = gml_run(@"
+var _test35 = gmlvm_run(@"
 function Animal(name) constructor {
     self.name = name;
     
@@ -354,7 +354,7 @@ return d.name + ' the ' + d.breed + ': ' + d.speak();
 show_debug_message("35. Constructor inheritance: " + string(_test35) + " (expected Rex the German Shepherd: Rex barks!)");
 
 show_debug_message("=== Static Variables (Advanced) ===");
-var _test36 = gml_run(@"
+var _test36 = gmlvm_run(@"
 function createId() {
     static nextId = 1000;
     return nextId++;
@@ -366,7 +366,7 @@ return string(a) + ',' + string(b) + ',' + string(c);
 ");
 show_debug_message("36. Static counter: " + string(_test36) + " (expected 1000,1001,1002)");
 
-var _test37 = gml_run(@"
+var _test37 = gmlvm_run(@"
 function accumulator(start) {
     static total = 0;
     total += start;
@@ -379,24 +379,24 @@ return accumulator(15);
 show_debug_message("37. Static accumulator: " + string(_test37) + " (expected 30)");
 
 show_debug_message("=== Edge Cases ===");
-var _test38 = gml_run(@"
+var _test38 = gmlvm_run(@"
 return;
 ");
 show_debug_message("38. Empty return: " + string(_test38) + " (expected undefined)");
 
-var _test39 = gml_run(@"
+var _test39 = gmlvm_run(@"
 var x;
 return x;
 ");
 show_debug_message("39. Uninitialized variable: " + string(_test39) + " (expected undefined)");
 
-var _test40 = gml_run(@"
+var _test40 = gmlvm_run(@"
 return 1 + undefined;
 ");
 show_debug_message("40. Undefined in arithmetic: " + string(_test40) + " (expected 1)");
 
 show_debug_message("=== Complex Integration Test ===");
-var _test41 = gml_run(@"
+var _test41 = gmlvm_run(@"
 function createCounter() {
     static count = 0;
     return function() {
