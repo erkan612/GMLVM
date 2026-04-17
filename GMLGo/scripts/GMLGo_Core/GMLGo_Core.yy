@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"GMLGo_Core",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"GMLGo_Core",
+  "parent":{
+    "name":"GMLGo",
+    "path":"GMLGo.yyp",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
