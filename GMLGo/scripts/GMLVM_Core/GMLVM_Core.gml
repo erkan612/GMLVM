@@ -1,15 +1,57 @@
-global.__gmlvm_static_registry = {};
-global.__gmlvm_warnings = {
-    undefined_binary_left: true,
-    undefined_binary_right: true,
-    undefined_unary: true,
-    unknown_operator: true,
-    cannot_call: true,
-    parse_error: true
-};
-global.__gmlvm_warning_collector = new gmlvm_warning_collector();
-global.__gmlvm_ast_cache = new gmlvm_cahce();
-global.__gmlvm_debugger = new gmlvm_debugger();
+/*********************************************************************************************
+*                                        MIT License                                         *
+*--------------------------------------------------------------------------------------------*
+* Copyright (c) 2026 erkan612                                                                *
+*                                                                                            *
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this       *
+* software and associated documentation files (the "Software"), to deal in the Software      *
+* without restriction, including without limitation the rights to use, copy, modify, merge,  *
+* publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons *
+* to whom the Software is furnished to do so, subject to the following conditions:           *
+*                                                                                            *
+* The above copyright notice and this permission notice shall be included in all copies or   *
+* substantial portions of the Software.                                                      *
+*                                                                                            *
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,        *
+* INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR   *
+* PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE  *
+* FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR       *
+* OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER     *
+* DEALINGS IN THE SOFTWARE.                                                                  *
+**********************************************************************************************
+*--------------------------------------------------------------------------------------------*
+*   					***********************************************                      *
+*   			         ██████╗ ███╗   ███╗██╗    ██╗   ██╗███╗   ███╗		                 *
+*   			        ██╔════╝ ████╗ ████║██║    ██║   ██║████╗ ████║		                 *
+*   			        ██║  ███╗██╔████╔██║██║    ██║   ██║██╔████╔██║		                 *
+*   			        ██║   ██║██║╚██╔╝██║██║    ╚██╗ ██╔╝██║╚██╔╝██║		                 *
+*   			        ╚██████╔╝██║ ╚═╝ ██║███████╗╚████╔╝ ██║ ╚═╝ ██║		                 *
+*   			         ╚═════╝ ╚═╝     ╚═╝╚══════╝ ╚═══╝  ╚═╝     ╚═╝		                 *
+*   						 GameMaker Immediate Mode UI Library	                         *
+*   						          Version 1.12.34				                         *
+*   																                         *
+*   						            by erkan612					                         *
+*   						=======================================	                         *
+*   						A feature rich Immediate-Mode UI system	                         *
+*   						             for GameMaker				                         *
+*   						=======================================	                         *
+*   					***********************************************                      *
+*********************************************************************************************/
+
+function gmlvm_init() {
+	global.__gmlvm_static_registry = {};
+	global.__gmlvm_warnings = { // TODO: add more warnings
+	    undefined_binary_left: true,
+	    undefined_binary_right: true,
+	    undefined_unary: true,
+	    unknown_operator: true,
+	    cannot_call: true,
+	    parse_error: true
+	};
+	global.__gmlvm_warning_collector = new gmlvm_warning_collector();
+	global.__gmlvm_ast_cache = new gmlvm_cache();
+	global.__gmlvm_debugger = new gmlvm_debugger();
+}
 
 function gmlvm_warning_collector() constructor {
     warnings = [];
@@ -469,7 +511,7 @@ function gmlvm_run(_code, _self = self, _other = other) {
     return gmlvm_vm(_ast, _self, _other);
 }
 
-function gmlvm_cahce() constructor {
+function gmlvm_cache() constructor {
     cache = ds_map_create();
     
     static Get = function(_code) {

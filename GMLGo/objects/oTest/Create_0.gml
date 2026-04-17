@@ -1,11 +1,8 @@
-//show_debug_message("=== Simple Struct Literal ===");
-//gmlvmp_run(@"
-//testStruct = { x: 100 };
-//");
-//show_debug_message("testStruct: " + string(is_struct(testStruct)));
-//if (is_struct(testStruct)) {
-//    show_debug_message("testStruct.x = " + string(testStruct.x));
-//}
+/*
+todo; add do/until and with statements
+*/
+
+gmlvm_init();
 
 show_debug_message("=== Basic Arithmetic and Precedence ===");
 var _test1 = gmlvm_run(@"
@@ -417,4 +414,4 @@ results[4] = c2(); // 2
 
 return string(results[0]) + ',' + string(results[1]) + ',' + string(results[2]) + ',' + string(results[3]) + ',' + string(results[4]);
 ");
-show_debug_message("41. Multiple static instances: " + string(_test41) + " (expected 1,2,1,3,2)");
+show_debug_message("41. Multiple static instances: " + string(_test41) + " (expected 1,2,1,3,2)"); // this shit always fails

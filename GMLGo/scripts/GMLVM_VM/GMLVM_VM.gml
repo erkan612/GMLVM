@@ -103,33 +103,29 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     var _inherit = _func.__gmlvm_inherit;
     var _inherit_args = _func.__gmlvm_inherit_args;
     
-    if (_is_constructor) {
-        _self_inst = {};
-        
-	    if (_is_constructor) {
-	        _self_inst = {};
-        
-	        if (_inherit != undefined) {
-	            var _parent_ctor = _caller_ctx.GetVar(_inherit);
-	            if (is_struct(_parent_ctor) && struct_exists(_parent_ctor, "__gmlvm_type") && _parent_ctor.__gmlvm_type == "function") {
-	                var _parent_args = _args;
-                
-	                var _parent_was_constructor = _parent_ctor.__gmlvm_is_constructor;
-	                _parent_ctor.__gmlvm_is_constructor = true;
-	                var _parent_instance = gmlvm_vm_call_gmlvm_function(_parent_ctor, _parent_args, _caller_ctx);
-	                _parent_ctor.__gmlvm_is_constructor = _parent_was_constructor;
-                
-	                if (is_struct(_parent_instance)) {
-	                    var _names = struct_get_names(_parent_instance);
-	                    for (var _i = 0; _i < array_length(_names); _i++) {
-	                        var _n = _names[_i];
-	                        _self_inst[$ _n] = _parent_instance[$ _n];
-	                    }
+	if (_is_constructor) {
+	    _self_inst = {};
+    
+	    if (_inherit != undefined) {
+	        var _parent_ctor = _caller_ctx.GetVar(_inherit);
+	        if (is_struct(_parent_ctor) && struct_exists(_parent_ctor, "__gmlvm_type") && _parent_ctor.__gmlvm_type == "function") {
+	            var _parent_args = _args;
+            
+	            var _parent_was_constructor = _parent_ctor.__gmlvm_is_constructor;
+	            _parent_ctor.__gmlvm_is_constructor = true;
+	            var _parent_instance = gmlvm_vm_call_gmlvm_function(_parent_ctor, _parent_args, _caller_ctx);
+	            _parent_ctor.__gmlvm_is_constructor = _parent_was_constructor;
+            
+	            if (is_struct(_parent_instance)) {
+	                var _names = struct_get_names(_parent_instance);
+	                for (var _i = 0; _i < array_length(_names); _i++) {
+	                    var _n = _names[_i];
+	                    _self_inst[$ _n] = _parent_instance[$ _n];
 	                }
 	            }
 	        }
 	    }
-    }
+	}
     
     var _func_ctx = new gmlvm_vm_context(_self_inst, _caller_ctx.GetSelf());
     
