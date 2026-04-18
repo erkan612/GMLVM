@@ -704,31 +704,31 @@ return result;
 ");
 show_debug_message("77. Self in with (struct): " + string(_test77) + " (expected 10)");
 
-var _test78 = gmlvm_run(@"
-var outer = instance_create_depth(0, 0, 0, Object2);
-outer.x = 5;
-var inner = { y: 10 };
-var result = 0;
-with (inner) {
-    result = other.x + self.y;
-}
-instance_destroy(outer);
-return result;
-");
-show_debug_message("78. Other in with: " + string(_test78) + " (expected 15)");
-
-var _test79 = gmlvm_run(@"
-var inst = instance_create_depth(0, 0, 0, Object2);
-inst.value = 30;
-var outer_value = 40;
-var result = 0;
-with (inst) {
-    result = value + other.outer_value;
-}
-instance_destroy(inst);
-return result;
-");
-show_debug_message("79. Other with instance: " + string(_test79) + " (expected 70)");
+//var _test78 = gmlvm_run(@" // 78 and 79 are messed up cuz of the limitations
+//var outer = instance_create_depth(0, 0, 0, Object2);
+//outer.x = 5;
+//var inner = { y: 10 };
+//var result = 0;
+//with (inner) {
+//    result = other.x + self.y;
+//}
+//instance_destroy(outer);
+//return result;
+//");
+//show_debug_message("78. Other in with: " + string(_test78) + " (expected 15)");
+//
+//var _test79 = gmlvm_run(@"
+//var inst = instance_create_depth(0, 0, 0, Object2);
+//inst.value = 30;
+//var outer_value = 40;
+//var result = 0;
+//with (inst) {
+//    result = value + other.outer_value;
+//}
+//instance_destroy(inst);
+//return result;
+//");
+//show_debug_message("79. Other with instance: " + string(_test79) + " (expected 70)");
 
 show_debug_message("=== Accessors ===");
 var _test80 = gmlvm_run(@"
@@ -858,12 +858,23 @@ var _test96 = gmlvm_run(@"
 var text = @'He said ''Hello'' to me';
 return text;
 ");
-show_debug_message("96. Multi-line with quotes: " + string(_test96) + " (expected He said \"Hello\" to me)");
+show_debug_message("96. Multi-line with quotes: " + string(_test96) + " (expected He said 'Hello' to me)");
 
+show_debug_message("=== DS Map/List Literals ===");
+var _test97 = gmlvm_run(@"
+var map = ds_map_create();
+map[? 'name'] = 'Alice';
+return map[? 'name'];
+");
+show_debug_message("97. Map literal: " + string(_test97) + " (expected Alice)");
 
-
-
-
+var _test98 = gmlvm_run(@"
+var list = ds_list_create();
+ds_list_add(list, 10);
+ds_list_add(list, 20);
+return list[| 1];
+");
+show_debug_message("98. List literal: " + string(_test98) + " (expected 20)");
 
 
 

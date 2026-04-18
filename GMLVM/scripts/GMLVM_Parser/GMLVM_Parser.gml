@@ -67,6 +67,90 @@ function _gmlvm_parse_primary(_tokens, _pos) {
 	if (_t.type == "template_string") {
 	    return [new gmlvm_template_string_node(_t.parts, _line, _col), _pos + 1];
 	}
+	
+	// Map literal: [? key: value, ... ]
+	if (_t.type == "map_open") {
+	    _pos++;
+	    var _fields = [];
+    
+	    var _next = _gmlvm_tok(_tokens, _pos);
+	    if (_next.type == "bracket" && _next.value == "]") {
+	        _pos++;
+	        return _gmlvm_parse_postfix(_tokens, _pos, new gmlvm_map_node([], _line, _col));
+	    }
+    
+	    while (true) {
+	        var _key_tok = _gmlvm_tok(_tokens, _pos);
+	        if (_key_tok.type == "bracket" && _key_tok.value == "]") {
+	            _pos++;
+	            break;
+	        }
+        
+	        var _key = "";
+	        if (_key_tok.type == "identifier") {
+	            _key = _key_tok.value;
+	            _pos++;
+	        } else if (_key_tok.type == "string") {
+	            _key = _key_tok.value;
+	            _pos++;
+	        } else {
+	            return [new gmlvm_parse_error("Expected identifier or string as map key", _key_tok.line, _key_tok.column), _pos];
+	        }
+        
+	        var _sep = _gmlvm_tok(_tokens, _pos);
+	        if (!(_sep.type == "operator" && _sep.value == ":")) {
+	            return [new gmlvm_parse_error("Expected ':' after map key", _sep.line, _sep.column), _pos];
+	        }
+	        _pos++;
+        
+	        var _vr = gmlvm_parse_expression(_tokens, _pos);
+	        var _value = _vr[0];
+	        _pos = _vr[1];
+        
+	        array_push(_fields, { key: _key, value: _value });
+        
+	        var _after = _gmlvm_tok(_tokens, _pos);
+	        if (_after.type == "separator" && _after.value == ",") {
+	            _pos++;
+	            continue;
+	        } else if (_after.type == "bracket" && _after.value == "]") {
+	            _pos++;
+	            break;
+	        }
+	    }
+    
+	    return _gmlvm_parse_postfix(_tokens, _pos, new gmlvm_map_node(_fields, _line, _col));
+	}
+
+	// List literal: [| item1, item2, ... ]
+	if (_t.type == "list_open") {
+	    _pos++;
+	    var _items = [];
+    
+	    var _next = _gmlvm_tok(_tokens, _pos);
+	    if (_next.type == "bracket" && _next.value == "]") {
+	        _pos++;
+	        return _gmlvm_parse_postfix(_tokens, _pos, new gmlvm_list_node([], _line, _col));
+	    }
+    
+	    while (true) {
+	        var _er = gmlvm_parse_expression(_tokens, _pos);
+	        array_push(_items, _er[0]);
+	        _pos = _er[1];
+        
+	        var _sep = _gmlvm_tok(_tokens, _pos);
+	        if (_sep.type == "separator" && _sep.value == ",") {
+	            _pos++;
+	        } else if (_sep.type == "bracket" && _sep.value == "]") {
+	            _pos++;
+	            break;
+	        } else {
+	            break;
+	        }
+	    }
+    
+	    return _gmlvm_parse_postfix(_tokens, _pos, new gmlvm_list_node(_items, _line, _col));
+	}
 
     // array literal: [ expr, expr, ... ]
     if (_t.type == "bracket" && _t.value == "[") {
@@ -326,6 +410,23 @@ function _gmlvm_parse_postfix(_tokens, _pos, _node) {
     while (true) {
         var _next = _gmlvm_tok(_tokens, _pos);
         
+        // Accessors: expr [@ index], expr [$ index], expr [# index], expr [? index]
+        if (_next.type == "accessor") {
+            var _kind = "bracket";
+            var _accessor_type = _next.value;  // "[@", "[$", "[#", "[?"
+            _pos++;
+            
+            var _ir = gmlvm_parse_expression(_tokens, _pos);
+            var _index = _ir[0];
+            _pos = _ir[1];
+            
+            var _close = _gmlvm_tok(_tokens, _pos);
+            if (_close.type == "bracket" && _close.value == "]") _pos++;
+            
+            _node = new gmlvm_access_node(_node, _index, _accessor_type);
+            continue;
+        }
+        
         // function call:  expr ( args... )
         if (_next.type == "paren" && _next.value == "(") {
             var _args = [];
@@ -346,23 +447,6 @@ function _gmlvm_parse_postfix(_tokens, _pos, _node) {
             if (_rp.type == "paren" && _rp.value == ")") _p++;
             _node = new gmlvm_call_node(_node, _args);
             _pos = _p;
-            continue;
-        }
-        
-        // Accessors: expr [@ index], expr [$ index], expr [# index], expr [? index]
-        if (_next.type == "accessor") {
-            var _kind = "bracket";
-            var _accessor_type = _next.value;  // "[@", "[$", "[#", "[?"
-            _pos++;
-            
-            var _ir = gmlvm_parse_expression(_tokens, _pos);
-            var _index = _ir[0];
-            _pos = _ir[1];
-            
-            var _close = _gmlvm_tok(_tokens, _pos);
-            if (_close.type == "bracket" && _close.value == "]") _pos++;
-            
-            _node = new gmlvm_access_node(_node, _index, _accessor_type);
             continue;
         }
         

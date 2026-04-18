@@ -401,9 +401,9 @@ function gmlvm_tokenize(_src) {
 		    });
 		    continue;
 		}
-
-		// Accessors - check for [@, [$, [#, [?
-		if (_ch == "[" && (_ch2 == "@" || _ch2 == "$" || _ch2 == "#" || _ch2 == "?")) {
+		
+		// Accessors and map/list access: [@, [$, [#, [?, [|
+		if (_ch == "[" && (_ch2 == "@" || _ch2 == "$" || _ch2 == "#" || _ch2 == "?" || _ch2 == "|")) {
 		    var _accessor = _ch + _ch2;
 		    array_push(_tokens, {
 		        type: "accessor",

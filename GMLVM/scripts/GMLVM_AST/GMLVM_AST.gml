@@ -960,3 +960,37 @@ function gmlvm_template_string_node(_parts, _line = -1, _column = -1) constructo
         return _result;
     };
 }
+
+function gmlvm_map_node(_fields, _line = -1, _column = -1) constructor {
+    type   = "map";
+    fields = _fields;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _map = ds_map_create();
+        for (var _i = 0; _i < array_length(fields); _i++) {
+            var _field = fields[_i];
+            var _key = _field.key;
+            var _val = gmlvm_vm_evaluate(_field.value, _ctx);
+            ds_map_set(_map, _key, _val);
+        }
+        return _map;
+    };
+}
+
+function gmlvm_list_node(_items, _line = -1, _column = -1) constructor {
+    type  = "list";
+    items = _items;
+    line  = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _list = ds_list_create();
+        for (var _i = 0; _i < array_length(items); _i++) {
+            var _val = gmlvm_vm_evaluate(items[_i], _ctx);
+            ds_list_add(_list, _val);
+        }
+        return _list;
+    };
+}

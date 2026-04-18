@@ -39,12 +39,14 @@ function gmlvm_vm_get_access(_node, _ctx) {
     }
     
     // Map accessor [?]
-    if (_kind == "[?") {
-        if (ds_exists(_target, ds_type_map)) {
-            return ds_map_find_value(_target, _idx);
-        }
-        return undefined;
-    }
+	if (_kind == "[?") {
+	    return ds_map_find_value(_target, _idx);
+	}
+
+	// List accessor [|]
+	if (_kind == "[|") {
+	    return ds_list_find_value(_target, _idx);
+	}
     
     // Grid accessor [#]
     if (_kind == "[#") {
@@ -102,10 +104,10 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
             _target[$ _idx] = _value;
         }
     } else if (_kind == "[?") {
-        if (ds_exists(_target, ds_type_map)) {
-            ds_map_set(_target, _idx, _value);
-        }
-    } else if (_kind == "[#") {
+	    ds_map_set(_target, _idx, _value);
+	} else if (_kind == "[|") {
+	    ds_list_set(_target, _idx, _value);
+	} else if (_kind == "[#") {
         if (is_array(_idx) && ds_exists(_target, ds_type_grid)) {
             ds_grid_set(_target, _idx[0], _idx[1], _value);
         }
