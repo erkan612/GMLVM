@@ -1,7 +1,3 @@
-/*
-todo; add do/until and with statements
-*/
-
 file_read = function(_path) {
     if (!file_exists(_path)) {
         return ""; // or you could throw an error
