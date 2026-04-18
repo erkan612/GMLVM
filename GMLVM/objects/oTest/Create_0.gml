@@ -876,7 +876,23 @@ return list[| 1];
 ");
 show_debug_message("98. List literal: " + string(_test98) + " (expected 20)");
 
+show_debug_message("=== Exit Statement ===");
+var _test99 = gmlvm_run(@"
+var result = 0;
+exit;
+result = 42;
+return result;
+");
+show_debug_message("99. Exit statement: " + string(_test99) + " (expected undefined)");
 
+var _test100 = gmlvm_run(@"
+function foo() {
+    exit;
+    return 42;
+}
+return foo();
+");
+show_debug_message("100. Exit in function: " + string(_test100) + " (expected undefined)");
 
 
 

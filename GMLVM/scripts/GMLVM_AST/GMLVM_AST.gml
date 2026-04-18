@@ -140,7 +140,7 @@ function gmlvm_block_node(_statements, _line = -1, _column = -1) constructor {
             
             if (is_struct(_result) && struct_exists(_result, "type")) {
                 var _type = _result.type;
-                if (_type == "return" || _type == "break" || _type == "continue") {
+                if (_type == "return" || _type == "break" || _type == "continue" || _type == "exit") {
                     return _result;
                 }
             }
@@ -271,6 +271,8 @@ function gmlvm_while_node(_cond, _body, _line = -1, _column = -1) constructor {
                     continue;
                 } else if (_result.type == "return") {
                     return _result;
+                } else if (_result.type == "exit") {
+                    return _result;
                 }
             }
         }
@@ -311,6 +313,8 @@ function gmlvm_for_node(_init, _cond, _step, _body, _line = -1, _column = -1) co
                 } else if (_result.type == "continue") {
                     // Continue to step
                 } else if (_result.type == "return") {
+                    return _result;
+                } else if (_result.type == "exit") {
                     return _result;
                 }
             }
@@ -689,6 +693,8 @@ function gmlvm_do_until_node(_cond, _body, _line = -1, _column = -1) constructor
                     continue;
                 } else if (_result.type == "return") {
                     return _result;
+                } else if (_result.type == "exit") {
+                    return _result;
                 }
             }
         } until (gmlvm_vm_evaluate(cond, _ctx));
@@ -992,5 +998,15 @@ function gmlvm_list_node(_items, _line = -1, _column = -1) constructor {
             ds_list_add(_list, _val);
         }
         return _list;
+    };
+}
+
+function gmlvm_exit_node(_line = -1, _column = -1) constructor {
+    type   = "exit";
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        return new gmlvm_interrupt("exit");
     };
 }

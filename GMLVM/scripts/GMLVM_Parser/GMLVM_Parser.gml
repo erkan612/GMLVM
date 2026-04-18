@@ -681,6 +681,18 @@ function gmlvm_parse_statement(_tokens, _pos) {
 	    return [_assign_node, _pos];
 	}
 	
+	// exit statement
+	if (_t.type == "keyword" && _t.value == "exit") {
+	    var _line = _t.line;
+	    var _col = _t.column;
+	    _pos++;
+    
+	    var _sc = _gmlvm_tok(_tokens, _pos);
+	    if (_sc.type == "separator" && _sc.value == ";") _pos++;
+    
+	    return [new gmlvm_exit_node(_line, _col), _pos];
+	}
+	
 	// try statement
     if (_t.type == "keyword" && _t.value == "try") {
         var _line = _t.line;

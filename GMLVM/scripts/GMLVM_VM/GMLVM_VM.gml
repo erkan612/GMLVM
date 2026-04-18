@@ -295,10 +295,12 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     var _result = gmlvm_vm_evaluate(_body, _func_ctx);
     
     if (is_struct(_result) && struct_exists(_result, "type")) {
-        if (_result.type == "return") {
-            return _result.value;
-        }
-    }
+	    if (_result.type == "return") {
+	        return _result.value;
+	    } else if (_result.type == "exit") {
+	        return undefined;
+	    }
+	}
     
     if (_is_constructor) {
         return _self_inst;
@@ -350,6 +352,9 @@ function gmlvm_vm(_ast, _self = self, _other = other) {
         if (is_struct(_result) && struct_exists(_result, "type")) {
             if (_result.type == "return") {
                 return _result.value;
+            }
+            if (_result.type == "exit") {
+                return undefined;
             }
         }
         
