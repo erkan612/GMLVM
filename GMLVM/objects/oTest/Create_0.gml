@@ -679,8 +679,56 @@ return count;
 ");
 show_debug_message("74. With on object (multiple): " + string(_test74) + " (expected 3)");
 
+show_debug_message("=== Global Dot Operator ===");
+var _test75 = gmlvm_run(@"
+global.test_var = 42;
+return global.test_var;
+");
+show_debug_message("75. Global dot access: " + string(_test75) + " (expected 42)");
 
+var _test76 = gmlvm_run(@"
+global.obj = { value: 100 };
+return global.obj.value;
+");
+show_debug_message("76. Global dot nested: " + string(_test76) + " (expected 100)");
 
+show_debug_message("=== Self and Other in With ===");
+var _test77 = gmlvm_run(@"
+var obj = { value: 10 };
+var result = 0;
+with (obj) {
+    self.new_value = 20;
+    result = value;
+}
+return result;
+");
+show_debug_message("77. Self in with (struct): " + string(_test77) + " (expected 10)");
+
+var _test78 = gmlvm_run(@"
+var outer = instance_create_depth(0, 0, 0, Object2);
+outer.x = 5;
+var inner = { y: 10 };
+var result = 0;
+with (inner) {
+    result = other.x + self.y;
+}
+instance_destroy(outer);
+return result;
+");
+show_debug_message("78. Other in with: " + string(_test78) + " (expected 15)");
+
+var _test79 = gmlvm_run(@"
+var inst = instance_create_depth(0, 0, 0, Object2);
+inst.value = 30;
+var outer_value = 40;
+var result = 0;
+with (inst) {
+    result = value + other.outer_value;
+}
+instance_destroy(inst);
+return result;
+");
+show_debug_message("79. Other with instance: " + string(_test79) + " (expected 70)");
 
 
 

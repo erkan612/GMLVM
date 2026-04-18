@@ -3,23 +3,32 @@ function gmlvm_vm_get_access(_node, _ctx) {
     var _index = _node.index;
     
     if (_node.kind == "dot") {
-        // dot access: target.property
-        var _prop = _index.value;  // index is a string node
+        var _prop = _index.value;
         if (is_struct(_target)) {
             return _target[$ _prop];
         } else if (instance_exists(_target)) {
+            if (_prop == "id") return _target;
+            if (_prop == "x") return _target.x;
+            if (_prop == "y") return _target.y;
+            if (_prop == "object_index") return _target.object_index;
+            if (_prop == "sprite_index") return _target.sprite_index;
+            
             if (variable_instance_exists(_target, _prop)) {
                 return variable_instance_get(_target, _prop);
             }
         }
         return undefined;
     } else if (_node.kind == "bracket") {
-        // Bracket access: target[index]
         var _idx = gmlvm_vm_evaluate(_index, _ctx);
         if (is_array(_target)) {
             return _target[_idx];
         } else if (is_struct(_target)) {
             return _target[$ _idx];
+        } else if (instance_exists(_target)) {
+            var _prop = string(_idx);
+            if (variable_instance_exists(_target, _prop)) {
+                return variable_instance_get(_target, _prop);
+            }
         }
         return undefined;
     }
@@ -44,6 +53,8 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
             _target[_idx] = _value;
         } else if (is_struct(_target)) {
             _target[$ _idx] = _value;
+        } else if (instance_exists(_target)) {
+            variable_instance_set(_target, string(_idx), _value);
         }
     }
 }
