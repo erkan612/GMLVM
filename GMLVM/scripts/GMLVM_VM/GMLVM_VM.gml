@@ -302,7 +302,7 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
         return { found: _found, value: _value };
     }
     
-    // Math functions
+    // function overrides
     if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
     if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
     if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
@@ -363,6 +363,25 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
 	            }
 	        }
 	        return false;
+	    };
+	    return { found: true, value: _value };
+	}
+	if (_name == "typeof") {
+	    _value = function(_val) {
+	        if (_val == undefined) return "undefined";
+	        if (is_real(_val)) return "number";
+	        if (is_string(_val)) return "string";
+	        if (is_array(_val)) return "array";
+	        if (is_struct(_val)) {
+	            if (struct_exists(_val, "__gmlvm_type") && _val.__gmlvm_type == "function") {
+	                return "method";
+	            }
+	            return "struct";
+	        }
+	        if (is_method(_val)) return "method";
+	        if (is_bool(_val)) return "number";  // GML treats bool as number
+        
+	        return "unknown";
 	    };
 	    return { found: true, value: _value };
 	}

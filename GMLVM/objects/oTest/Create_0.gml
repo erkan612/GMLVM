@@ -537,30 +537,30 @@ show_debug_message("55b. instanceof string: " + string(_test55b) + " (expected D
 
 show_debug_message("=== Typeof Operator ===");
 var _test56 = gmlvm_run(@"
-return typeof 42;
+return typeof(42);
 ");
 show_debug_message("56. Typeof number: " + string(_test56) + " (expected number)");
 
 var _test57 = gmlvm_run(@"
-return typeof 'hello';
+return typeof('hello');
 ");
 show_debug_message("57. Typeof string: " + string(_test57) + " (expected string)");
 
 var _test58 = gmlvm_run(@"
-return typeof [1,2,3];
+return typeof([1,2,3]);
 ");
 show_debug_message("58. Typeof array: " + string(_test58) + " (expected array)");
 
 var _test59 = gmlvm_run(@"
-return typeof { x: 10 };
+return typeof({ x: 10 });
 ");
 show_debug_message("59. Typeof struct: " + string(_test59) + " (expected struct)");
 
 var _test60 = gmlvm_run(@"
 function test() {}
-return typeof test;
+return typeof(test);
 ");
-show_debug_message("60. Typeof function: " + string(_test60) + " (expected function)");
+show_debug_message("60. Typeof function: " + string(_test60) + " (expected method)");
 
 show_debug_message("=== Bitwise Operators ===");
 var _test61 = gmlvm_run(@"

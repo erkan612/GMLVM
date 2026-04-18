@@ -203,16 +203,6 @@ function _gmlvm_parse_primary(_tokens, _pos) {
         return [new gmlvm_delete_node(_target, _line, _col), _pos];
     }
 
-    // typeof operator
-    if (_t.type == "keyword" && _t.value == "typeof") {
-        _pos++;
-        var _expr_res = _gmlvm_parse_primary(_tokens, _pos);
-        var _expr = _expr_res[0];
-        _pos = _expr_res[1];
-        
-        return [new gmlvm_typeof_node(_expr, _line, _col), _pos];
-    }
-
     // function expression
     if (_t.type == "keyword" && _t.value == "function") {
         _pos++;
