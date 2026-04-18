@@ -674,7 +674,7 @@ function gmlvm_run(_code, _self = self, _other = other) {
     var _processed = gmlvm_preprocess(_code);
     var _tokens = gmlvm_tokenize(_processed);
     var _ast = gmlvm_parse(_tokens);
-    return gmlvm_vm(_ast, _self, _other);
+	return gmlvm_vm(_ast, _self, _other);
 }
 
 function gmlvm_tokenize_only(_code) {

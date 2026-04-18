@@ -727,13 +727,13 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
     body   = _body;
     line   = _line;
     column = _column;
-    
+  
     Execute = function(_ctx) {
 	    var _target_val = gmlvm_vm_evaluate(target, _ctx);
 	    var _result = undefined;
 	    var _old_self = _ctx.GetSelf();
 	    var _old_other = _ctx.GetOther();
-    
+  
 	    if (_target_val == -3) { // all
 	        with (all) {
 	            _ctx.self_inst = id;
@@ -749,7 +749,7 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
 	                _ctx.self_inst = _inst;
 	                _ctx.other_inst = _old_self;
 	                var _inst_result = gmlvm_vm_evaluate(body, _ctx);
-                
+              
 	                if (is_struct(_inst_result) && struct_exists(_inst_result, "type")) {
 	                    if (_inst_result.type == "break") {
 	                        break;
@@ -776,10 +776,10 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
 	        _ctx.other_inst = _old_self;
 	        _result = gmlvm_vm_evaluate(body, _ctx);
 	    }
-    
+  
 	    _ctx.self_inst = _old_self;
 	    _ctx.other_inst = _old_other;
-    
+  
 	    if (is_struct(_result) && struct_exists(_result, "type")) {
 	        if (_result.type == "return") {
 	            return _result.value;
@@ -787,7 +787,7 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
 	            return undefined;
 	        }
 	    }
-    
+  
 	    return _result;
 	};
 }

@@ -124,6 +124,35 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
     }
 }
 
+//function gmlvm_vm_call(_func, _args, _ctx) {
+//    // check if its framework's custom GML function
+//    if (is_struct(_func) && struct_exists(_func, "__gmlvm_type") && _func.__gmlvm_type == "function") {
+//        return gmlvm_vm_call_gmlvm_function(_func, _args, _ctx);
+//    }
+//    
+//    if (is_method(_func) || is_real(_func)) {
+//        var _arg_count = array_length(_args);
+//        
+//        switch (_arg_count) {
+//            case 0:  return _func();
+//            case 1:  return _func(_args[0]);
+//            case 2:  return _func(_args[0], _args[1]);
+//            case 3:  return _func(_args[0], _args[1], _args[2]);
+//            case 4:  return _func(_args[0], _args[1], _args[2], _args[3]);
+//            case 5:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4]);
+//            case 6:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5]);
+//            case 7:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6]);
+//            case 8:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], _args[7]);
+//            default:
+//                return undefined;
+//        }
+//    }
+//    
+//	// return if its just a value
+//	gmlvm_warning("cannot_call", "Cannot call value of type " + typeof(_func));
+//    return _func;
+//}
+
 function gmlvm_vm_call(_func, _args, _ctx) {
     // check if its framework's custom GML function
     if (is_struct(_func) && struct_exists(_func, "__gmlvm_type") && _func.__gmlvm_type == "function") {
@@ -132,24 +161,43 @@ function gmlvm_vm_call(_func, _args, _ctx) {
     
     if (is_method(_func) || is_real(_func)) {
         var _arg_count = array_length(_args);
+        var _current_self = _ctx.GetSelf();
         
-        switch (_arg_count) {
-            case 0:  return _func();
-            case 1:  return _func(_args[0]);
-            case 2:  return _func(_args[0], _args[1]);
-            case 3:  return _func(_args[0], _args[1], _args[2]);
-            case 4:  return _func(_args[0], _args[1], _args[2], _args[3]);
-            case 5:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4]);
-            case 6:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5]);
-            case 7:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6]);
-            case 8:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], _args[7]);
-            default:
-                return undefined;
+        // If we have an instance as self, call the function in its context
+        if (instance_exists(_current_self) || is_struct(_current_self)) {
+            var _result;
+            with (_current_self) {
+                switch (_arg_count) {
+                    case 0:  _result = _func(); break;
+                    case 1:  _result = _func(_args[0]); break;
+                    case 2:  _result = _func(_args[0], _args[1]); break;
+                    case 3:  _result = _func(_args[0], _args[1], _args[2]); break;
+                    case 4:  _result = _func(_args[0], _args[1], _args[2], _args[3]); break;
+                    case 5:  _result = _func(_args[0], _args[1], _args[2], _args[3], _args[4]); break;
+                    case 6:  _result = _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5]); break;
+                    case 7:  _result = _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6]); break;
+                    case 8:  _result = _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], _args[7]); break;
+                    default: _result = undefined;
+                }
+            }
+            return _result;
+        } else {
+            switch (_arg_count) {
+                case 0:  return _func();
+                case 1:  return _func(_args[0]);
+                case 2:  return _func(_args[0], _args[1]);
+                case 3:  return _func(_args[0], _args[1], _args[2]);
+                case 4:  return _func(_args[0], _args[1], _args[2], _args[3]);
+                case 5:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4]);
+                case 6:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5]);
+                case 7:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6]);
+                case 8:  return _func(_args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], _args[7]);
+                default: return undefined;
+            }
         }
     }
     
-	// return if its just a value
-	gmlvm_warning("cannot_call", "Cannot call value of type " + typeof(_func));
+    gmlvm_warning("cannot_call", "Cannot call value of type " + typeof(_func));
     return _func;
 }
 
@@ -311,58 +359,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     }
     
     return _result;
-}
-
-function gmlvm_vm_evaluate(_node, _ctx) {
-    if (_node == undefined) {
-        return undefined;
-    }
-    
-    // debugger hook
-    var _dbg = global.__gmlvm_debugger;
-    _dbg.OnNodeEnter(_node);
-    
-    if (_dbg.ShouldBreak(_node)) { // TODO: implement the actual 'debugging'
-        show_debug_message("DEBUGGER: Break at line " + string(_dbg.current_line));
-		// TODO: ...
-    }
-    
-    if (is_array(_node)) {
-        var _result = undefined;
-        for (var _i = 0; _i < array_length(_node); _i++) {
-            _result = gmlvm_vm_evaluate(_node[_i], _ctx);
-        }
-        return _result;
-    }
-    
-    if (struct_exists(_node, "Execute")) {
-        return _node.Execute(_ctx);
-    }
-    
-    return _node;
-}
-
-function gmlvm_vm(_ast, _self = self, _other = other) {
-    var _ctx = new gmlvm_vm_context(_self, _other);
-    
-    try {
-        var _result = gmlvm_vm_evaluate(_ast, _ctx);
-        
-        // unwrap return interrupt
-        if (is_struct(_result) && struct_exists(_result, "type")) {
-            if (_result.type == "return") {
-                return _result.value;
-            }
-            if (_result.type == "exit") {
-                return undefined;
-            }
-        }
-        
-        return _result;
-    } catch (_err) {
-        show_debug_message("VM Runtime Error: " + string(_err));
-        return undefined;
-    }
 }
 
 function gmlvm_vm_builtin(_name) { // TODO: add more built in
@@ -592,4 +588,146 @@ function gmlvm_vm_context(_self, _other) constructor {
     static IsStatic = function(_name) {
         return struct_exists(static_names, _name);
     };
+}
+
+function gmlvm_vm_evaluate(_node, _ctx) {
+    if (_node == undefined) {
+        return undefined;
+    }
+    
+    // debugger hook
+    var _dbg = global.__gmlvm_debugger;
+    _dbg.OnNodeEnter(_node);
+    
+    if (_dbg.ShouldBreak(_node)) { // TODO: implement the actual 'debugging'
+        show_debug_message("DEBUGGER: Break at line " + string(_dbg.current_line));
+		// TODO: ...
+    }
+    
+    if (is_array(_node)) {
+        var _result = undefined;
+        for (var _i = 0; _i < array_length(_node); _i++) {
+            _result = gmlvm_vm_evaluate(_node[_i], _ctx);
+        }
+        return _result;
+    }
+    
+    if (struct_exists(_node, "Execute")) {
+        return _node.Execute(_ctx);
+    }
+    
+    return _node;
+}
+
+//function gmlvm_vm(_ast, _self = self, _other = other) {
+//    var _ctx = new gmlvm_vm_context(_self, _other);
+//	
+//	if (instance_exists(_self) || is_struct(_self)) {
+//        var _result;
+//        with (_self) {
+//            _result = gmlvm_vm(_ast, id, _other);
+//        }
+//        return _result;
+//    } else {
+//        return gmlvm_vm(_ast, _self, _other);
+//    }
+//}
+
+//function gmlvm_vm(_ast, _self = self, _other = other) {
+//    var _ctx = new gmlvm_vm_context(_self, _other);
+//    
+//    try {
+//        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+//        
+//        // unwrap return interrupt
+//        if (is_struct(_result) && struct_exists(_result, "type")) {
+//            if (_result.type == "return") {
+//                return _result.value;
+//            }
+//        }
+//        
+//        return _result;
+//    } catch (_err) {
+//        show_debug_message("VM Runtime Error: " + string(_err));
+//        return undefined;
+//    }
+//}
+
+function gmlvm_vm(_ast, _self = self, _other = other) {
+    // If _self is an instance, run the entire VM in that instance's context
+    if (instance_exists(_self) || is_struct(_self)) {
+        var _result;
+        with (_self) {
+            var _ctx = new gmlvm_vm_context(id, _other);
+            try {
+                _result = gmlvm_vm_evaluate(_ast, _ctx);
+                
+                if (is_struct(_result) && struct_exists(_result, "type")) {
+                    if (_result.type == "return") {
+                        _result = _result.value;
+                    }
+                }
+            } catch (_err) {
+                show_debug_message("VM Runtime Error: " + string(_err));
+                _result = undefined;
+            }
+        }
+        return _result;
+    }
+    
+    // For structs or no instance, just run normally
+    var _ctx = new gmlvm_vm_context(_self, _other);
+    try {
+        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+        
+        if (is_struct(_result) && struct_exists(_result, "type")) {
+            if (_result.type == "return") {
+                return _result.value;
+            }
+        }
+        
+        return _result;
+    } catch (_err) {
+        show_debug_message("VM Runtime Error: " + string(_err));
+        return undefined;
+    }
+}
+
+/*
+function gmlvm_vm(_ast, _self = self, _other = other) {
+    if (object_exists(_self) || is_struct(_self)) {
+        var _result;
+        with (_self) {
+            var _ctx = new gmlvm_vm_context(id, _other);
+            try {
+                _result = gmlvm_vm_evaluate(_ast, _ctx);
+                
+                if (is_struct(_result) && struct_exists(_result, "type")) {
+                    if (_result.type == "return") {
+                        _result = _result.value;
+                    }
+                }
+            } catch (_err) {
+                show_debug_message("VM Runtime Error: " + string(_err));
+                _result = undefined;
+            }
+        }
+        return _result;
+    }
+    
+    var _ctx = new gmlvm_vm_context(_self, _other);
+    try {
+        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+        
+        if (is_struct(_result) && struct_exists(_result, "type")) {
+            if (_result.type == "return") {
+                return _result.value;
+            }
+        }
+        
+        return _result;
+    } catch (_err) {
+        show_debug_message("VM Runtime Error: " + string(_err));
+        return undefined;
+    }
 }

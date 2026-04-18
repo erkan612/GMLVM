@@ -37,7 +37,6 @@ draw_parse = gmlvm_parse_only(draw_code);
 
 gmlvm_vm(create_parse, self);
 
-/*
 show_debug_message("=== Basic Arithmetic and Precedence ===");
 var _test1 = gmlvm_run(@"
 return 2 + 3 * 4;
