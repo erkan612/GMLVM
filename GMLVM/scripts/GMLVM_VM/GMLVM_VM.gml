@@ -103,13 +103,42 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     var _inherit = _func.__gmlvm_inherit;
     var _inherit_args = _func.__gmlvm_inherit_args;
     
-	if (_is_constructor) {
+    if (_is_constructor) {
 	    _self_inst = {};
+	    _self_inst.__constructor = _func;
+    
+	    // First, evaluate all arguments that will be passed to this constructor
+	    // These are the evaluated values from the 'new' call
+	    var _evaluated_args = [];
+	    for (var _i = 0; _i < array_length(_args); _i++) {
+	        _evaluated_args[_i] = _args[_i];
+	    }
     
 	    if (_inherit != undefined) {
 	        var _parent_ctor = _caller_ctx.GetVar(_inherit);
 	        if (is_struct(_parent_ctor) && struct_exists(_parent_ctor, "__gmlvm_type") && _parent_ctor.__gmlvm_type == "function") {
-	            var _parent_args = _args;
+	            _func.__parent = _parent_ctor;
+            
+	            var _parent_args = [];
+            
+	            if (array_length(_inherit_args) > 0) {
+	                // Create a temporary context with the parameters bound
+	                // so that _inherit_args can reference parameter names
+	                var _temp_ctx = new gmlvm_vm_context(_self_inst, _caller_ctx.GetSelf());
+	                for (var _i = 0; _i < array_length(_params); _i++) {
+	                    var _param_name = _params[_i];
+	                    var _value = (_i < array_length(_evaluated_args)) ? _evaluated_args[_i] : 0;
+	                    _temp_ctx.locals[$ _param_name] = _value;
+	                }
+                
+	                for (var _i = 0; _i < array_length(_inherit_args); _i++) {
+	                    _parent_args[_i] = gmlvm_vm_evaluate(_inherit_args[_i], _temp_ctx);
+	                }
+	            } else {
+	                for (var _i = 0; _i < array_length(_evaluated_args); _i++) {
+	                    _parent_args[_i] = _evaluated_args[_i];
+	                }
+	            }
             
 	            var _parent_was_constructor = _parent_ctor.__gmlvm_is_constructor;
 	            _parent_ctor.__gmlvm_is_constructor = true;
@@ -269,32 +298,40 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
     }
     
     // Math functions
-    //if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
-	//if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
-    //if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
-    //if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
-    //if (_name == "power") { _value = power; return { found: true, value: _value }; }
-    //if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
-    //if (_name == "round") { _value = round; return { found: true, value: _value }; }
-    //if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
-    //if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
-    //if (_name == "random") { _value = random; return { found: true, value: _value }; }
-    //if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
-    //if (_name == "string") { _value = string; return { found: true, value: _value }; }
-    //if (_name == "real") { _value = real; return { found: true, value: _value }; }
-    //if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
-    //if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
-    //if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
-    //if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
-    //if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
-    //if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
-    //if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
-    //if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
-	_value = real(asset_get_index(_name));
-	return { found: true, value: _value };
-	
-    //_found = false;
-    //return { found: _found, value: undefined };
+    if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
+    if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
+    if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
+    if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
+    if (_name == "power") { _value = power; return { found: true, value: _value }; }
+    if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
+    if (_name == "round") { _value = round; return { found: true, value: _value }; }
+    if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
+    if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
+    if (_name == "random") { _value = random; return { found: true, value: _value }; }
+    if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
+    if (_name == "string") { _value = string; return { found: true, value: _value }; }
+    if (_name == "real") { _value = real; return { found: true, value: _value }; }
+    if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
+    if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
+    if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
+    if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
+    if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
+    if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
+    if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
+    if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
+    if (_name == "struct_remove") { _value = struct_remove; return { found: true, value: _value }; }
+    if (_name == "array_delete") { _value = array_delete; return { found: true, value: _value }; }
+    if (_name == "is_bool") { _value = is_bool; return { found: true, value: _value }; }
+    if (_name == "is_method") { _value = is_method; return { found: true, value: _value }; }
+    
+    // Try asset index
+    _value = real(asset_get_index(_name));
+    if (_value >= 0) {
+        return { found: true, value: _value };
+    }
+    
+    _found = false;
+    return { found: _found, value: undefined };
 }
 
 function gmlvm_vm_context(_self, _other) constructor {

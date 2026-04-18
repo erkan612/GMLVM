@@ -5,9 +5,14 @@ function _gmlvm_infix_bp(_op) {
         case "==": case "!=":
         case "<":  case ">":
         case "<=": case ">=": return [5, 6];
-        case "+":  case "-":  return [7, 8];
+        case "instanceof":    return [5, 6];  // Same precedence as comparison operators
+        case "|":             return [7, 8];
+        case "^":             return [9, 10];
+        case "&":             return [11, 12];
+        case "<<": case ">>": return [13, 14];
+        case "+":  case "-":  return [15, 16];
         case "*":  case "/":
-        case "%":             return [9, 10];
+        case "%":             return [17, 18];
     }
     return [-1, -1];   // not an infix op
 }
@@ -112,7 +117,6 @@ function _gmlvm_parse_primary(_tokens, _pos) {
                 _key = _key_tok.value;
                 _pos++;
             } else {
-                // Error - return parse error
                 return [new gmlvm_parse_error("Expected identifier or string as struct key, got " + _key_tok.type, _key_tok.line, _key_tok.column), _pos];
             }
             
@@ -188,6 +192,26 @@ function _gmlvm_parse_primary(_tokens, _pos) {
         var _node = new gmlvm_new_node(_ctor_var, _args, _line, _col);
         
         return _gmlvm_parse_postfix(_tokens, _pos, _node);
+    }
+
+    // delete operator
+    if (_t.type == "keyword" && _t.value == "delete") {
+        _pos++;
+        var _target_res = _gmlvm_parse_primary(_tokens, _pos);
+        var _target = _target_res[0];
+        _pos = _target_res[1];
+        
+        return [new gmlvm_delete_node(_target, _line, _col), _pos];
+    }
+
+    // typeof operator
+    if (_t.type == "keyword" && _t.value == "typeof") {
+        _pos++;
+        var _expr_res = _gmlvm_parse_primary(_tokens, _pos);
+        var _expr = _expr_res[0];
+        _pos = _expr_res[1];
+        
+        return [new gmlvm_typeof_node(_expr, _line, _col), _pos];
     }
 
     // function expression
@@ -409,13 +433,16 @@ function gmlvm_parse_expression_bp(_tokens, _start, _min_bp) {
     while (true) {
         var _t  = _gmlvm_tok(_tokens, _pos);
         var _bp = _gmlvm_infix_bp(_t.value);
+        
         if (_bp[0] < _min_bp) break;
         var _r_bp = _bp[1];
-        _pos++;
+        _pos++; // consume the operator
+        
         var _rr    = gmlvm_parse_expression_bp(_tokens, _pos, _r_bp);
         var _right = _rr[0];
         _pos       = _rr[1];
-        _left      = new gmlvm_binary_op_node(_t.value, _left, _right);
+        
+        _left = new gmlvm_binary_op_node(_t.value, _left, _right, _t.line, _t.column);
     }
 
     return [_left, _pos];
@@ -575,7 +602,6 @@ function gmlvm_parse_statement(_tokens, _pos) {
         _pos++;
         var _open = _gmlvm_tok(_tokens, _pos);
         if (!(_open.type == "paren" && _open.value == "(")) {
-            show_debug_message("Parse error: expected '(' after 'if'");
 			gmlvm_warning("parse_error", "Expected '(' after 'if' at line " + string(_t.line));
             return [undefined, _pos];
         }
@@ -716,7 +742,6 @@ function gmlvm_parse_statement(_tokens, _pos) {
         _pos++;
         var _open = _gmlvm_tok(_tokens, _pos);
         if (!(_open.type == "paren" && _open.value == "(")) {
-            show_debug_message("Parse error: expected '(' after 'repeat'");
             return [undefined, _pos];
         }
         _pos++;
@@ -878,21 +903,22 @@ function gmlvm_parse_statement(_tokens, _pos) {
 
     // check for assignment:  expr = expr
     var _nx = _gmlvm_tok(_tokens, _pos);
-    if (_nx.type == "operator") {
-        var _op = _nx.value;
-        if (_op == "=") {
-            _pos++;
-            var _vr = gmlvm_parse_expression(_tokens, _pos);
-            _node = new gmlvm_assign_node(_node, _vr[0]);
-            _pos  = _vr[1];
-        }
-        else if (_op == "+=" || _op == "-=" || _op == "*=" || _op == "/=" || _op == "%=") {
-            _pos++;
-            var _vr = gmlvm_parse_expression(_tokens, _pos);
-            _node = new gmlvm_compound_assign_node(_node, _op, _vr[0]);
-            _pos  = _vr[1];
-        }
-    }
+	if (_nx.type == "operator") {
+	    var _op = _nx.value;
+	    if (_op == "=") {
+	        _pos++;
+	        var _vr = gmlvm_parse_expression(_tokens, _pos);
+	        _node = new gmlvm_assign_node(_node, _vr[0]);
+	        _pos  = _vr[1];
+	    }
+	    else if (_op == "+=" || _op == "-=" || _op == "*=" || _op == "/=" || _op == "%=" ||
+	             _op == "&=" || _op == "|=" || _op == "^=" || _op == "<<=" || _op == ">>=") {
+	        _pos++;
+	        var _vr = gmlvm_parse_expression(_tokens, _pos);
+	        _node = new gmlvm_compound_assign_node(_node, _op, _vr[0]);
+	        _pos  = _vr[1];
+	    }
+	}
 
     // consume optional semicolon
     var _sc2 = _gmlvm_tok(_tokens, _pos);
@@ -946,7 +972,6 @@ function gmlvm_parse(_tokens) {
 function gmlvm_parse_cached(_code) {
     var _cached = global.__gmlvm_ast_cache.Get(_code);
     if (_cached != undefined) {
-        show_debug_message("gmlvm_parse: Using cached AST");
         return _cached;
     }
     

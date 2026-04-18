@@ -495,15 +495,179 @@ return obj.val;
 ");
 show_debug_message("51. Struct compound assign: " + string(_test51) + " (expected 12)");
 
+show_debug_message("=== Delete Operator ===");
+var _test52 = gmlvm_run(@"
+var obj = { a: 1, b: 2, c: 3 };
+delete obj.b;
+return struct_exists(obj, 'b');
+");
+show_debug_message("52. Delete struct property: " + string(_test52) + " (expected 0)");
 
+var _test53 = gmlvm_run(@"
+var arr = [10, 20, 30];
+delete arr[1];
+return string(arr[0]) + ',' + string(arr[1]);
+");
+show_debug_message("53. Delete array element: " + string(_test53) + " (expected 10,30)");
 
+show_debug_message("=== Instanceof Operator ===");
+var _test54 = gmlvm_run(@"
+function Animal() constructor {}
+function Dog() : Animal() constructor {}
+var d = new Dog();
+return d instanceof Dog;
+");
+show_debug_message("54. Instanceof direct: " + string(_test54) + " (expected 1)");
 
+var _test55 = gmlvm_run(@"
+function Animal() constructor {}
+function Dog() : Animal() constructor {}
+var d = new Dog();
+return d instanceof Animal;
+");
+show_debug_message("55. Instanceof parent: " + string(_test55) + " (expected 1)");
 
+show_debug_message("=== Typeof Operator ===");
+var _test56 = gmlvm_run(@"
+return typeof 42;
+");
+show_debug_message("56. Typeof number: " + string(_test56) + " (expected number)");
 
+var _test57 = gmlvm_run(@"
+return typeof 'hello';
+");
+show_debug_message("57. Typeof string: " + string(_test57) + " (expected string)");
 
+var _test58 = gmlvm_run(@"
+return typeof [1,2,3];
+");
+show_debug_message("58. Typeof array: " + string(_test58) + " (expected array)");
 
+var _test59 = gmlvm_run(@"
+return typeof { x: 10 };
+");
+show_debug_message("59. Typeof struct: " + string(_test59) + " (expected struct)");
 
+var _test60 = gmlvm_run(@"
+function test() {}
+return typeof test;
+");
+show_debug_message("60. Typeof function: " + string(_test60) + " (expected function)");
 
+show_debug_message("=== Bitwise Operators ===");
+var _test61 = gmlvm_run(@"
+return 5 & 3;
+");
+show_debug_message("61. Bitwise AND: " + string(_test61) + " (expected 1)");
+
+var _test62 = gmlvm_run(@"
+return 5 | 3;
+");
+show_debug_message("62. Bitwise OR: " + string(_test62) + " (expected 7)");
+
+var _test63 = gmlvm_run(@"
+return 5 ^ 3;
+");
+show_debug_message("63. Bitwise XOR: " + string(_test63) + " (expected 6)");
+
+var _test64 = gmlvm_run(@"
+return ~5;
+");
+show_debug_message("64. Bitwise NOT: " + string(_test64) + " (expected -6)");
+
+var _test65 = gmlvm_run(@"
+return 1 << 3;
+");
+show_debug_message("65. Left shift: " + string(_test65) + " (expected 8)");
+
+var _test66 = gmlvm_run(@"
+return 16 >> 2;
+");
+show_debug_message("66. Right shift: " + string(_test66) + " (expected 4)");
+
+var _test67 = gmlvm_run(@"
+var x = 5;
+x &= 3;
+return x;
+");
+show_debug_message("67. Bitwise AND assign: " + string(_test67) + " (expected 1)");
+
+// Test bitwise operators with simpler expressions
+var _test_bitwise = gmlvm_run(@"
+var a = 5;
+var b = 3;
+return a & b;
+");
+show_debug_message("Bitwise AND simple: " + string(_test_bitwise) + " (expected 1)");
+
+show_debug_message("=== Fixed Bitwise Tests ===");
+var _test_bitwise1 = gmlvm_run(@"
+var a = 5;
+var b = 3;
+return a & b;
+");
+show_debug_message("Bitwise AND (5 & 3): " + string(_test_bitwise1) + " (expected 1)");
+
+var _test_bitwise2 = gmlvm_run(@"
+return 5 | 3;
+");
+show_debug_message("Bitwise OR (5 | 3): " + string(_test_bitwise2) + " (expected 7)");
+
+var _test_bitwise3 = gmlvm_run(@"
+var x = 5;
+x &= 3;
+return x;
+");
+show_debug_message("Bitwise AND assign: " + string(_test_bitwise3) + " (expected 1)");
+
+var _test_bitwise4 = gmlvm_run(@"
+return 1 << 3;
+");
+show_debug_message("Left shift (1 << 3): " + string(_test_bitwise4) + " (expected 8)");
+
+show_debug_message("=== Fixed Constructor Inheritance ===");
+var _test35_fixed = gmlvm_run(@"
+function Animal(name) constructor {
+    self.name = name;
+    self.speak = function() {
+        return name + ' makes a sound';
+    };
+}
+function Dog(name, breed) : Animal(name) constructor {
+    self.breed = breed;
+    self.speak = function() {
+        return name + ' barks!';
+    };
+}
+var d = new Dog('Rex', 'German Shepherd');
+return d.name + ' the ' + d.breed + ': ' + d.speak();
+");
+show_debug_message("35. Constructor inheritance: " + string(_test35_fixed) + " (expected Rex the German Shepherd: Rex barks!)");
+
+// Debug tokenization
+var _test_code = "5 & 3";
+var _test_tokens = gmlvm_tokenize(_test_code);
+show_debug_message("Tokens for '5 & 3':");
+for (var _i = 0; _i < array_length(_test_tokens); _i++) {
+    show_debug_message("  " + string(_i) + ": " + _test_tokens[_i].type + " '" + string(_test_tokens[_i].value) + "'");
+}
+
+show_debug_message("=== Debug Constructor ===");
+var _test_debug = gmlvm_run(@"
+function Test(name) constructor {
+    self.name = name;
+}
+var t = new Test('Rex');
+return t.name;
+");
+show_debug_message("Debug - Simple constructor: " + string(_test_debug) + " (expected Rex)");
+
+_test_tokens = undefined;
+_test_tokens = gmlvm_tokenize("function Dog(name, breed) : Animal(name) constructor {}");
+show_debug_message("=== Tokens for Dog constructor ===");
+for (var _i = 0; _i < array_length(_test_tokens); _i++) {
+    show_debug_message("  " + string(_i) + ": " + _test_tokens[_i].type + " '" + string(_test_tokens[_i].value) + "'");
+}
 
 
 

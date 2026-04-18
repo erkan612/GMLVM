@@ -43,47 +43,73 @@ function gmlvm_binary_op_node(_op, _left, _right, _line = -1, _column = -1) cons
     column = _column;
     
     Execute = function(_ctx) {
-        var _l = gmlvm_vm_evaluate(left, _ctx);
-        var _r = gmlvm_vm_evaluate(right, _ctx);
+	    var _l = gmlvm_vm_evaluate(left, _ctx);
+	    var _r = gmlvm_vm_evaluate(right, _ctx);
+    
+	    // Handle undefined values
+	    if (_l == undefined) {
+	        gmlvm_warning("undefined_binary_left", "Left operand is undefined in binary op '" + op + "' at line " + string(line));
+	        _l = 0;
+	    }
+	    if (_r == undefined) {
+	        gmlvm_warning("undefined_binary_right", "Right operand is undefined in binary op '" + op + "' at line " + string(line));
+	        _r = 0;
+	    }
+    
+	    switch (op) {
+	        case "+":  
+	            if (is_string(_l) || is_string(_r)) {
+	                return string(_l) + string(_r);
+	            }
+	            return _l + _r;
+	        case "-":  return _l - _r;
+	        case "*":  return _l * _r;
+	        case "/":  return _l / _r;
+	        case "%":  return _l % _r;
+	        case "==": return _l == _r;
+	        case "!=": return _l != _r;
+	        case "<":  return _l < _r;
+	        case ">":  return _l > _r;
+	        case "<=": return _l <= _r;
+	        case ">=": return _l >= _r;
+	        case "&&": return _l && _r;
+	        case "||": return _l || _r;
+	        case "<<": return _l << _r;
+	        case ">>": return _l >> _r;
+	        case "&":  return _l & _r;
+	        case "|":  return _l | _r;
+	        case "^":  return _l ^ _r;
+			case "instanceof":
+			    if (!is_struct(_l)) return false;
+			    if (!is_struct(_r)) return false;
+			    if (!struct_exists(_r, "__gmlvm_type")) return false;
+			    if (_r.__gmlvm_type != "function") return false;
+    
+			    // Check constructor chain
+			    var _ctor = _l;
+			    while (!is_undefined(_ctor)) {
+			        if (!is_struct(_ctor)) break;
+			        if (_ctor == _r) return true;
         
-        // Handle undefined values
-        if (_l == undefined) {
-            gmlvm_warning("undefined_binary_left", "Left operand is undefined in binary op '" + op + "' at line " + string(line));
-            _l = 0;
-        }
-        if (_r == undefined) {
-            gmlvm_warning("undefined_binary_right", "Right operand is undefined in binary op '" + op + "' at line " + string(line));
-            _r = 0;
-        }
+			        // Try to get __constructor
+			        if (struct_exists(_ctor, "__constructor")) {
+			            _ctor = _ctor.__constructor;
+			            if (_ctor == _r) return true;
+			        }
         
-        switch (op) {
-            case "+":  
-                if (is_string(_l) || is_string(_r)) {
-                    return string(_l) + string(_r);
-                }
-                return _l + _r;
-            case "-":  return _l - _r;
-            case "*":  return _l * _r;
-            case "/":  return _l / _r;
-            case "%":  return _l % _r;
-            case "==": return _l == _r;
-            case "!=": return _l != _r;
-            case "<":  return _l < _r;
-            case ">":  return _l > _r;
-            case "<=": return _l <= _r;
-            case ">=": return _l >= _r;
-            case "&&": return _l && _r;
-            case "||": return _l || _r;
-            case "<<": return _l << _r;
-            case ">>": return _l >> _r;
-            case "&":  return _l & _r;
-            case "|":  return _l | _r;
-            case "^":  return _l ^ _r;
-            default:
-                gmlvm_warning("unknown_operator", "Unknown operator: " + op + " at line " + string(line));
-                return undefined;
-        }
-    };
+			        // Try to get __parent
+			        if (struct_exists(_ctor, "__parent")) {
+			            _ctor = _ctor.__parent;
+			        } else {
+			            break;
+			        }
+			    }
+			    return false;
+	        default:
+	            gmlvm_warning("unknown_operator", "Unknown operator: " + op + " at line " + string(line));
+	            return undefined;
+	    }
+	};
 }
 
 function gmlvm_unary_op_node(_op, _operand, _line = -1, _column = -1) constructor {
@@ -214,11 +240,11 @@ function gmlvm_compound_assign_node(_target, _op, _value, _line = -1, _column = 
 	        case "*=": _new = _current * _r; break;
 	        case "/=": _new = _current / _r; break;
 	        case "%=": _new = _current % _r; break;
-	        case "<<=": _new = _current << _r; break;
-	        case ">>=": _new = _current >> _r; break;
 	        case "&=": _new = _current & _r; break;
 	        case "|=": _new = _current | _r; break;
 	        case "^=": _new = _current ^ _r; break;
+	        case "<<=": _new = _current << _r; break;
+	        case ">>=": _new = _current >> _r; break;
 	    }
     
 	    if (target.type == "var") {
@@ -605,7 +631,6 @@ function gmlvm_new_node(_constructor, _args, _line = -1, _column = -1) construct
         }
         
         if (!is_struct(_ctor) || !struct_exists(_ctor, "__gmlvm_type") || _ctor.__gmlvm_type != "function") {
-            show_debug_message("VM Error: Cannot use 'new' on non-function value");
             return {};
         }
         
@@ -751,5 +776,106 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
         }
         
         return _result;
+    };
+}
+
+function gmlvm_typeof_node(_expr, _line = -1, _column = -1) constructor {
+    type   = "typeof";
+    expr   = _expr;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _val = gmlvm_vm_evaluate(expr, _ctx);
+        
+        if (_val == undefined) return "undefined";
+        if (is_real(_val)) return "number";
+        if (is_string(_val)) return "string";
+        if (is_array(_val)) return "array";
+        if (is_struct(_val)) {
+            if (struct_exists(_val, "__gmlvm_type") && _val.__gmlvm_type == "function") {
+                return "method";
+            }
+            return "struct";
+        }
+        if (is_method(_val)) return "method";
+        if (is_bool(_val)) return "number";
+        
+        return "unknown";
+    };
+}
+
+function gmlvm_delete_node(_target, _line = -1, _column = -1) constructor {
+    type   = "delete";
+    target = _target;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        if (target.type == "var") {
+            // Delete from locals if exists
+            if (struct_exists(_ctx.locals, target.name)) {
+                struct_remove(_ctx.locals, target.name);
+                return true;
+            }
+            // Delete from self if exists
+            var _self = _ctx.GetSelf();
+            if (is_struct(_self) && struct_exists(_self, target.name)) {
+                struct_remove(_self, target.name);
+                return true;
+            }
+            return false;
+        } else if (target.type == "access") {
+            var _obj = gmlvm_vm_evaluate(target.target, _ctx);
+            var _index = target.index;
+            
+            if (target.kind == "dot") {
+                var _prop = _index.value;
+                if (is_struct(_obj) && struct_exists(_obj, _prop)) {
+                    struct_remove(_obj, _prop);
+                    return true;
+                }
+            } else if (target.kind == "bracket") {
+                var _idx = gmlvm_vm_evaluate(_index, _ctx);
+                if (is_struct(_obj) && struct_exists(_obj, _idx)) {
+                    struct_remove(_obj, string(_idx));
+                    return true;
+                } else if (is_array(_obj) && _idx >= 0 && _idx < array_length(_obj)) {
+                    array_delete(_obj, _idx, 1);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+}
+
+function gmlvm_instanceof_node(_left, _right, _line = -1, _column = -1) constructor {
+    type   = "instanceof";
+    left   = _left;
+    right  = _right;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _obj = gmlvm_vm_evaluate(left, _ctx);
+        var _constructor = gmlvm_vm_evaluate(right, _ctx);
+        
+        if (!is_struct(_obj)) return false;
+        if (!is_struct(_constructor) || !struct_exists(_constructor, "__gmlvm_type") || _constructor.__gmlvm_type != "function") {
+            return false;
+        }
+        
+        // Check if _obj was created by _constructor or inherits from it
+        // Simple implementation: check constructor chain
+        if (struct_exists(_obj, "__constructor")) {
+            var _ctor = _obj.__constructor;
+            while (_ctor != undefined) {
+                if (_ctor == _constructor) return true;
+                _ctor = _ctor.__parent;
+            }
+        }
+        
+        return false;
     };
 }

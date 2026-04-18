@@ -220,7 +220,8 @@ function gmlvm_tokenize(_src) {
     var _kw_list  = ["if","else","while","for","repeat","switch","case",
                      "default","break","continue","return","var","static",
                      "function","constructor","new","true","false","try",
-                     "catch","finally","throw", "do", "until", "with"];
+                     "catch","finally","throw","do","until","with","delete",
+                     "instanceof","typeof"];
     for (var _k = 0; _k < array_length(_kw_list); _k++) {
         ds_map_set(_keywords, _kw_list[_k], true);
     }
@@ -231,6 +232,7 @@ function gmlvm_tokenize(_src) {
         var _start_line = _line;
         var _start_col = _col;
 
+        // Skip whitespace
         if (_ch == " " || _ch == "\t") {
             _i++; _col++;
             continue;
@@ -244,9 +246,11 @@ function gmlvm_tokenize(_src) {
             continue;
         }
 
-        // peek helper
+        // peek helpers
         var _ch2 = (_i + 1 <= _len) ? string_char_at(_src, _i + 1) : "";
+        var _ch3 = (_i + 2 <= _len) ? string_char_at(_src, _i + 2) : "";
 
+        // Comments
         if (_ch == "/" && _ch2 == "/") {
             _i += 2; _col += 2;
             while (_i <= _len) {
@@ -276,6 +280,54 @@ function gmlvm_tokenize(_src) {
                     break;
                 }
             }
+            continue;
+        }
+
+        // operators (including bitwise) - unified handling
+        if (_ch == "+" || _ch == "-" || _ch == "*" || _ch == "/" ||
+            _ch == "%" || _ch == "=" || _ch == "<" || _ch == ">" ||
+            _ch == "!" || _ch == "&" || _ch == "|" || _ch == "^" || _ch == "~") {
+            
+            var _three = _ch + _ch2 + _ch3;
+            var _two = _ch + _ch2;
+            
+            // check 3-character operators
+            if (_three == "<<=" || _three == ">>=") {
+                array_push(_tokens, {
+                    type: "operator",
+                    value: _three,
+                    line: _start_line,
+                    column: _start_col
+                });
+                _i += 3; _col += 3;
+                continue;
+            }
+            
+            // check 2-character operators
+            switch (_two) {
+                case "==": case "!=": case "<=": case ">=":
+                case "&&": case "||": case "++": case "--":
+                case "+=": case "-=": case "*=": case "/=": case "%=":
+                case "<<": case ">>":
+                case "&=": case "|=": case "^=":
+                    array_push(_tokens, {
+                        type: "operator",
+                        value: _two,
+                        line: _start_line,
+                        column: _start_col
+                    });
+                    _i += 2; _col += 2;
+                    continue;
+            }
+            
+            // single character operator
+            array_push(_tokens, {
+                type: "operator",
+                value: _ch,
+                line: _start_line,
+                column: _start_col
+            });
+            _i++; _col++;
             continue;
         }
 
@@ -386,39 +438,6 @@ function gmlvm_tokenize(_src) {
             continue;
         }
 
-        // multi-character operators
-        var _two = _ch + _ch2;
-        switch (_two) {
-            case "==": case "!=": case "<=": case ">=":
-            case "&&": case "||": case "++": case "--":
-            case "+=": case "-=": case "*=": case "/=": case "%=":
-            case "<<": case ">>":
-                array_push(_tokens, {
-                    type: "operator",
-                    value: _two,
-                    line: _start_line,
-                    column: _start_col
-                });
-                _i += 2; _col += 2;
-                continue;
-			case "<<=": case ">>=": case "&=": case "|=": case "^=":
-        }
-
-        // single-char operators
-        switch (_ch) {
-            case "+": case "-": case "*": case "/":
-            case "%": case "=": case "<": case ">":
-            case "!": case "&": case "^": case "~":
-                array_push(_tokens, {
-                    type: "operator",
-                    value: _ch,
-                    line: _start_line,
-                    column: _start_col
-                });
-                _i++; _col++;
-                continue;
-        }
-
         // parentheses
         if (_ch == "(" || _ch == ")") {
             array_push(_tokens, {
@@ -455,18 +474,16 @@ function gmlvm_tokenize(_src) {
             continue;
         }
 
-        // accessor / special single chars
-        switch (_ch) {
-            case ".": case "$": case "@":
-            case "?": case "|": case "#":
-                array_push(_tokens, {
-                    type: "operator",
-                    value: _ch,
-                    line: _start_line,
-                    column: _start_col
-                });
-                _i++; _col++;
-                continue;
+        // ternary operator
+        if (_ch == "?") {
+            array_push(_tokens, {
+                type: "operator",
+                value: "?",
+                line: _start_line,
+                column: _start_col
+            });
+            _i++; _col++;
+            continue;
         }
 
         // separator
@@ -486,6 +503,18 @@ function gmlvm_tokenize(_src) {
             array_push(_tokens, {
                 type: "operator",
                 value: ":",
+                line: _start_line,
+                column: _start_col
+            });
+            _i++; _col++;
+            continue;
+        }
+
+        // dot
+        if (_ch == ".") {
+            array_push(_tokens, {
+                type: "operator",
+                value: ".",
                 line: _start_line,
                 column: _start_col
             });
