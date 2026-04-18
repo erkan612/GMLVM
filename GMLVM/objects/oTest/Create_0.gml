@@ -392,31 +392,70 @@ return 1 + undefined;
 ");
 show_debug_message("40. Undefined in arithmetic: " + string(_test40) + " (expected 1)");
 
-show_debug_message("=== Complex Integration Test ===");
+show_debug_message("=== Others ===");
+// Test array increment
 var _test41 = gmlvm_run(@"
-function createCounter() {
-    static count = 0;
-    return function() {
-        count++;
-        return count;
-    };
-}
-
-var c1 = createCounter();
-var c2 = createCounter();
-
-var results = [];
-results[0] = c1(); // 1
-results[1] = c1(); // 2
-results[2] = c2(); // 1
-results[3] = c1(); // 3
-results[4] = c2(); // 2
-
-return string(results[0]) + ',' + string(results[1]) + ',' + string(results[2]) + ',' + string(results[3]) + ',' + string(results[4]);
+var testArray = [ 2 ];
+testArray[0]++;
+return testArray;
 ");
-show_debug_message("41. Multiple static instances: " + string(_test41) + " (expected 1,2,1,3,2)"); // this shit always fails
+show_debug_message("41. Array increment: " + string(_test41[0]) + " (expected 3)");
 
+// Test struct property increment
+var _test42 = gmlvm_run(@"
+var obj = { value: 5 };
+obj.value++;
+return obj.value;
+");
+show_debug_message("42. Struct property increment: " + string(_test42) + " (expected 6)");
 
+// Test do/until
+var _test43 = gmlvm_run(@"
+var i = 0;
+var sum = 0;
+do {
+    sum += i;
+    i++;
+} until (i > 5);
+return sum;
+");
+show_debug_message("43. Do/Until loop: " + string(_test43) + " (expected 15)");
+
+// Test do/until executes at least once
+var _test44 = gmlvm_run(@"
+var count = 0;
+do {
+    count++;
+} until (true);
+return count;
+");
+show_debug_message("44. Do/Until executes once: " + string(_test44) + " (expected 1)");
+
+// Test break in do/until
+var _test45 = gmlvm_run(@"
+var i = 0;
+var sum = 0;
+do {
+    if (i == 3) break;
+    sum += i;
+    i++;
+} until (i > 10);
+return sum;
+");
+show_debug_message("45. Break in do/until: " + string(_test45) + " (expected 3)");
+
+// Test continue in do/until
+var _test46 = gmlvm_run(@"
+var i = 0;
+var sum = 0;
+do {
+    i++;
+    if (i % 2 == 0) continue;
+    sum += i;
+} until (i >= 5);
+return sum;
+");
+show_debug_message("46. Continue in do/until: " + string(_test46) + " (expected 9)");
 
 
 

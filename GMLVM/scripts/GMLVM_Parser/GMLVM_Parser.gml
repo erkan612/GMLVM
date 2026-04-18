@@ -598,6 +598,41 @@ function gmlvm_parse_statement(_tokens, _pos) {
         
         return [new gmlvm_while_node(_cond, _body), _pos];
     }
+	
+	// do/until statement
+	if (_t.type == "keyword" && _t.value == "do") {
+	    var _line = _t.line;
+	    var _col = _t.column;
+	    _pos++;
+    
+	    var _br = gmlvm_parse_statement(_tokens, _pos);
+	    var _body = _br[0]; _pos = _br[1];
+    
+	    var _until_tok = _gmlvm_tok(_tokens, _pos);
+	    if (!(_until_tok.type == "keyword" && _until_tok.value == "until")) {
+	        gmlvm_warning("parse_error", "Expected 'until' after 'do' body at line " + string(_line));
+	        return [undefined, _pos];
+	    }
+	    _pos++;
+    
+	    var _open = _gmlvm_tok(_tokens, _pos);
+	    if (!(_open.type == "paren" && _open.value == "(")) {
+	        gmlvm_warning("parse_error", "Expected '(' after 'until' at line " + string(_line));
+	        return [undefined, _pos];
+	    }
+	    _pos++;
+    
+	    var _cr = gmlvm_parse_expression(_tokens, _pos);
+	    var _cond = _cr[0]; _pos = _cr[1];
+    
+	    var _close = _gmlvm_tok(_tokens, _pos);
+	    if (_close.type == "paren" && _close.value == ")") _pos++;
+    
+	    var _sc = _gmlvm_tok(_tokens, _pos);
+	    if (_sc.type == "separator" && _sc.value == ";") _pos++;
+    
+	    return [new gmlvm_do_until_node(_cond, _body, _line, _col), _pos];
+	}
 
     // for statement
     if (_t.type == "keyword" && _t.value == "for") {

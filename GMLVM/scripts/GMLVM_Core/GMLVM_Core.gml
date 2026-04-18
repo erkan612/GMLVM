@@ -220,7 +220,7 @@ function gmlvm_tokenize(_src) {
     var _kw_list  = ["if","else","while","for","repeat","switch","case",
                      "default","break","continue","return","var","static",
                      "function","constructor","new","true","false","try",
-                     "catch","finally","throw"];
+                     "catch","finally","throw", "do", "until"];
     for (var _k = 0; _k < array_length(_kw_list); _k++) {
         ds_map_set(_keywords, _kw_list[_k], true);
     }

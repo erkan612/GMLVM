@@ -652,15 +652,43 @@ function gmlvm_postfix_op_node(_op, _operand, _line = -1, _column = -1) construc
         }
         
         var _old_val = _val;
+        var _new_val = (op == "++") ? _val + 1 : _val - 1;
         
         if (operand.type == "var") {
-            if (op == "++") {
-                _ctx.SetVar(operand.name, _val + 1);
-            } else {
-                _ctx.SetVar(operand.name, _val - 1);
-            }
+            _ctx.SetVar(operand.name, _new_val);
+        }
+        else if (operand.type == "access") {
+            gmlvm_vm_set_access(operand, _new_val, _ctx);
         }
         
         return _old_val;
+    };
+}
+
+function gmlvm_do_until_node(_cond, _body, _line = -1, _column = -1) constructor {
+    type   = "do_until";
+    cond   = _cond;
+    body   = _body;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _result = undefined;
+        
+        do {
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                if (_result.type == "break") {
+                    return undefined;
+                } else if (_result.type == "continue") {
+                    continue;
+                } else if (_result.type == "return") {
+                    return _result;
+                }
+            }
+        } until (gmlvm_vm_evaluate(cond, _ctx));
+        
+        return _result;
     };
 }
