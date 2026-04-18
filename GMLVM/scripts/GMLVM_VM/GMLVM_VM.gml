@@ -105,10 +105,9 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     
     if (_is_constructor) {
 	    _self_inst = {};
-	    _self_inst.__constructor = _func;
+	    _self_inst.gmlvm_constructor = _func;
     
 	    // First, evaluate all arguments that will be passed to this constructor
-	    // These are the evaluated values from the 'new' call
 	    var _evaluated_args = [];
 	    for (var _i = 0; _i < array_length(_args); _i++) {
 	        _evaluated_args[_i] = _args[_i];
@@ -117,7 +116,7 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	    if (_inherit != undefined) {
 	        var _parent_ctor = _caller_ctx.GetVar(_inherit);
 	        if (is_struct(_parent_ctor) && struct_exists(_parent_ctor, "__gmlvm_type") && _parent_ctor.__gmlvm_type == "function") {
-	            _func.__parent = _parent_ctor;
+	            _func.gmlvm_parent = _parent_ctor;
             
 	            var _parent_args = [];
             
@@ -146,11 +145,17 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	            _parent_ctor.__gmlvm_is_constructor = _parent_was_constructor;
             
 	            if (is_struct(_parent_instance)) {
+	                // SAVE the constructor reference before copying!
+	                var _saved_constructor = _self_inst.gmlvm_constructor;
+                
 	                var _names = struct_get_names(_parent_instance);
 	                for (var _i = 0; _i < array_length(_names); _i++) {
 	                    var _n = _names[_i];
 	                    _self_inst[$ _n] = _parent_instance[$ _n];
 	                }
+                
+	                // RESTORE the correct constructor!
+	                _self_inst.gmlvm_constructor = _saved_constructor;
 	            }
 	        }
 	    }
@@ -323,7 +328,45 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
     if (_name == "array_delete") { _value = array_delete; return { found: true, value: _value }; }
     if (_name == "is_bool") { _value = is_bool; return { found: true, value: _value }; }
     if (_name == "is_method") { _value = is_method; return { found: true, value: _value }; }
-    
+    if (_name == "instanceof") {
+	    _value = function(_struct) {
+	        if (!is_struct(_struct)) return undefined;
+        
+	        // Check for gmlvm_constructor property
+	        if (struct_exists(_struct, "gmlvm_constructor")) {
+	            var _ctor = _struct.gmlvm_constructor;
+	            if (is_struct(_ctor) && struct_exists(_ctor, "__gmlvm_name")) {
+	                return _ctor.__gmlvm_name;
+	            }
+	        }
+        
+	        // Fallback - check if it's a plain struct
+	        return "struct";
+	    };
+	    return { found: true, value: _value };
+	}
+	if (_name == "is_instanceof") {
+	    _value = function(_struct, _constructor) {
+	        if (!is_struct(_struct)) return false;
+	        if (!is_struct(_constructor)) return false;
+        
+	        if (!struct_exists(_constructor, "__gmlvm_type")) return false;
+	        if (_constructor.__gmlvm_type != "function") return false;
+        
+	        if (struct_exists(_struct, "gmlvm_constructor")) {
+	            var _ctor = _struct.gmlvm_constructor;
+	            if (_ctor == _constructor) return true;
+            
+	            while (struct_exists(_ctor, "gmlvm_parent")) {
+	                _ctor = _ctor.gmlvm_parent;
+	                if (_ctor == _constructor) return true;
+	            }
+	        }
+	        return false;
+	    };
+	    return { found: true, value: _value };
+	}
+	
     // Try asset index
     _value = real(asset_get_index(_name));
     if (_value >= 0) {

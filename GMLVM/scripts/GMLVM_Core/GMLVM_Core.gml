@@ -221,7 +221,7 @@ function gmlvm_tokenize(_src) {
                      "default","break","continue","return","var","static",
                      "function","constructor","new","true","false","try",
                      "catch","finally","throw","do","until","with","delete",
-                     "instanceof","typeof"];
+                     "typeof"];
     for (var _k = 0; _k < array_length(_kw_list); _k++) {
         ds_map_set(_keywords, _kw_list[_k], true);
     }

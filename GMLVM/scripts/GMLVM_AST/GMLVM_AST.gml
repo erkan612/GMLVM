@@ -79,32 +79,6 @@ function gmlvm_binary_op_node(_op, _left, _right, _line = -1, _column = -1) cons
 	        case "&":  return _l & _r;
 	        case "|":  return _l | _r;
 	        case "^":  return _l ^ _r;
-			case "instanceof":
-			    if (!is_struct(_l)) return false;
-			    if (!is_struct(_r)) return false;
-			    if (!struct_exists(_r, "__gmlvm_type")) return false;
-			    if (_r.__gmlvm_type != "function") return false;
-    
-			    // Check constructor chain
-			    var _ctor = _l;
-			    while (!is_undefined(_ctor)) {
-			        if (!is_struct(_ctor)) break;
-			        if (_ctor == _r) return true;
-        
-			        // Try to get __constructor
-			        if (struct_exists(_ctor, "__constructor")) {
-			            _ctor = _ctor.__constructor;
-			            if (_ctor == _r) return true;
-			        }
-        
-			        // Try to get __parent
-			        if (struct_exists(_ctor, "__parent")) {
-			            _ctor = _ctor.__parent;
-			        } else {
-			            break;
-			        }
-			    }
-			    return false;
 	        default:
 	            gmlvm_warning("unknown_operator", "Unknown operator: " + op + " at line " + string(line));
 	            return undefined;

@@ -5,7 +5,6 @@ function _gmlvm_infix_bp(_op) {
         case "==": case "!=":
         case "<":  case ">":
         case "<=": case ">=": return [5, 6];
-        case "instanceof":    return [5, 6];  // Same precedence as comparison operators
         case "|":             return [7, 8];
         case "^":             return [9, 10];
         case "&":             return [11, 12];

@@ -515,17 +515,25 @@ var _test54 = gmlvm_run(@"
 function Animal() constructor {}
 function Dog() : Animal() constructor {}
 var d = new Dog();
-return d instanceof Dog;
+return is_instanceof(d, Dog);
 ");
-show_debug_message("54. Instanceof direct: " + string(_test54) + " (expected 1)");
+show_debug_message("54. is_instanceof direct: " + string(_test54) + " (expected 1)");
 
 var _test55 = gmlvm_run(@"
 function Animal() constructor {}
 function Dog() : Animal() constructor {}
 var d = new Dog();
-return d instanceof Animal;
+return is_instanceof(d, Animal);
 ");
-show_debug_message("55. Instanceof parent: " + string(_test55) + " (expected 1)");
+show_debug_message("55. is_instanceof parent: " + string(_test55) + " (expected 1)");
+
+var _test55b = gmlvm_run(@"
+function Animal() constructor {}
+function Dog() : Animal() constructor {}
+var d = new Dog();
+return instanceof(d);
+");
+show_debug_message("55b. instanceof string: " + string(_test55b) + " (expected Dog)");
 
 show_debug_message("=== Typeof Operator ===");
 var _test56 = gmlvm_run(@"
@@ -599,81 +607,6 @@ var b = 3;
 return a & b;
 ");
 show_debug_message("Bitwise AND simple: " + string(_test_bitwise) + " (expected 1)");
-
-show_debug_message("=== Fixed Bitwise Tests ===");
-var _test_bitwise1 = gmlvm_run(@"
-var a = 5;
-var b = 3;
-return a & b;
-");
-show_debug_message("Bitwise AND (5 & 3): " + string(_test_bitwise1) + " (expected 1)");
-
-var _test_bitwise2 = gmlvm_run(@"
-return 5 | 3;
-");
-show_debug_message("Bitwise OR (5 | 3): " + string(_test_bitwise2) + " (expected 7)");
-
-var _test_bitwise3 = gmlvm_run(@"
-var x = 5;
-x &= 3;
-return x;
-");
-show_debug_message("Bitwise AND assign: " + string(_test_bitwise3) + " (expected 1)");
-
-var _test_bitwise4 = gmlvm_run(@"
-return 1 << 3;
-");
-show_debug_message("Left shift (1 << 3): " + string(_test_bitwise4) + " (expected 8)");
-
-show_debug_message("=== Fixed Constructor Inheritance ===");
-var _test35_fixed = gmlvm_run(@"
-function Animal(name) constructor {
-    self.name = name;
-    self.speak = function() {
-        return name + ' makes a sound';
-    };
-}
-function Dog(name, breed) : Animal(name) constructor {
-    self.breed = breed;
-    self.speak = function() {
-        return name + ' barks!';
-    };
-}
-var d = new Dog('Rex', 'German Shepherd');
-return d.name + ' the ' + d.breed + ': ' + d.speak();
-");
-show_debug_message("35. Constructor inheritance: " + string(_test35_fixed) + " (expected Rex the German Shepherd: Rex barks!)");
-
-// Debug tokenization
-var _test_code = "5 & 3";
-var _test_tokens = gmlvm_tokenize(_test_code);
-show_debug_message("Tokens for '5 & 3':");
-for (var _i = 0; _i < array_length(_test_tokens); _i++) {
-    show_debug_message("  " + string(_i) + ": " + _test_tokens[_i].type + " '" + string(_test_tokens[_i].value) + "'");
-}
-
-show_debug_message("=== Debug Constructor ===");
-var _test_debug = gmlvm_run(@"
-function Test(name) constructor {
-    self.name = name;
-}
-var t = new Test('Rex');
-return t.name;
-");
-show_debug_message("Debug - Simple constructor: " + string(_test_debug) + " (expected Rex)");
-
-_test_tokens = undefined;
-_test_tokens = gmlvm_tokenize("function Dog(name, breed) : Animal(name) constructor {}");
-show_debug_message("=== Tokens for Dog constructor ===");
-for (var _i = 0; _i < array_length(_test_tokens); _i++) {
-    show_debug_message("  " + string(_i) + ": " + _test_tokens[_i].type + " '" + string(_test_tokens[_i].value) + "'");
-}
-
-
-
-
-
-
 
 
 
