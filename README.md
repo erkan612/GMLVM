@@ -1,43 +1,75 @@
-# GMLVM - GameMaker Language Virtual Machine
+# GMLVM - A GML Interpreter for GameMaker
 
-A complete, production-grade GML interpreter written entirely in GameMaker Language. Execute GML code dynamically at runtime with full language support.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GameMaker](https://img.shields.io/badge/GameMaker-green.svg)](https://www.yoyogames.com/gamemaker)
+
+A complete **GML interpreter** written in pure GML, allowing you to dynamically load and execute GameMaker Language code at runtime. Perfect for modding support, live-coding, scripting, and runtime code evaluation.
 
 ## Features
 
-- Complete GML syntax support - Variables, functions, constructors, static variables, closures
-- Full control flow - `if`/`else`, `while`, `for`, `repeat`, `switch`/`case`, `break`/`continue`
-- Error handling - `try`/`catch`/`finally`, `throw`
-- Data structures - Arrays, structs, accessors (`.`, `[]`, `[$]`)
-- Operators - Arithmetic, comparison, logical, bitwise, compound assignment
-- Modern GML - `static` variables, `constructor` inheritance, closures
-- Performance - AST caching for repeated execution
-- Security - Sandboxing with function/variable blacklisting
-- Developer tools - Configurable warnings, step-through debugger, static code analysis
+- **Complete Language Support**: Implements virtually all GML language features
+- **Runtime Execution**: Parse and execute GML code dynamically
+- **Instance-Aware**: Full integration with GameMaker's instance system
+- **Preprocessor**: Supports `#macro` with nested expansion
+- **No External Dependencies**: Pure GML implementation
 
-## Installation
+## Supported Features
 
-1. Download the latest GMLVM release
-2. Import the downloaded `*.yymps` file using local package manager
-3. Call `gmlvm_init()` once at game start
+### Core Language
+- Variables and scoping (`var`, instance variables, globals)
+- Arithmetic, comparison, and logical operators
+- Bitwise operators (`&`, `|`, `^`, `~`, `<<`, `>>`)
+- Nullish coalescing (`??`) and assignment (`?=`)
+- Ternary operator (`?:`)
+- Compound assignments (`+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`)
+- Postfix increment/decrement (`++`, `--`)
 
-```gml
-gmlvm_init();
-```
+### Control Flow
+- `if`/`else` statements
+- `while` loops
+- `for` loops
+- `repeat` loops
+- `do`/`until` loops
+- `switch` statements (with fallthrough)
+- `break`, `continue`, `return`, `exit`
+
+### Data Types
+- Numbers and strings
+- Arrays and array literals
+- Structs and struct literals
+- `ds_map` and `ds_list` with accessors
+- Accessors: `[@]`, `[$]`, `[?]`, `[|]`, `[#]`
+- Template strings (`$"Hello {name}!"`)
+- Multi-line strings (`@"line1\nline2"`)
+
+### Functions
+- Function declarations and calls
+- Optional arguments with defaults
+- Closures
+- Recursion
+- Constructors with inheritance
+- Static variables
+- `new` operator
+
+### Advanced Features
+- `with` statement (instances, objects, structs, `all`)
+- `delete` operator
+- `try`/`catch`/`finally`/`throw`
+- Enums (auto-incrementing and explicit values)
+- `typeof()` function
+- `instanceof()` and `is_instanceof()` functions
+- Preprocessor macros (`#macro` with nested expansion)
+- `#region`/`#endregion` directives (stripped)
 
 ## Quick Start
 
-### Basic Execution
-
-Execute a simple expression:
+### Basic Usage
 
 ```gml
-var result = gmlvm_run("2 + 3 * 4");
-show_debug_message(result); // 14
-```
+// Initialize the interpreter (call once)
+gmlvm_init();
 
-Execute multiple statements and return a value:
-
-```gml
+// Execute GML code
 var result = gmlvm_run(@"
     var x = 10;
     var y = 20;
@@ -46,153 +78,92 @@ var result = gmlvm_run(@"
 show_debug_message(result); // 30
 ```
 
-### Using Custom Context
-
-Provide `self` and `other` for the execution context:
+### Running on an Instance
 
 ```gml
-var context = { health: 100, max_health: 100 };
-var result = gmlvm_run(@"
-    health -= 25;
-    return health;
-", context);
-show_debug_message(result); // 75
-```
-
-### Caching for Repeated Execution
-
-Parse once, execute many times for better performance:
-
-```gml
-// Parse once
-var ast = gmlvm_parse(@"
-    var result = 1;
-    for (var i = 1; i <= 10; i++) {
-        result *= i;
-    }
-    return result;
+// Create event
+gmlvm_init();
+create_ast = gmlvm_parse_only(@"
+    spd = 5;
+    hp = 100;
 ");
 
-// Execute multiple times
-var factorial10 = gmlvm_vm(ast);
-show_debug_message(factorial10); // 3628800
-```
-
-Or use the built-in cached runner:
-
-```gml
-var result1 = gmlvm_run_cached(@"
-    function expensive(n) {
-        var sum = 0;
-        for (var i = 0; i < n; i++) sum += i;
-        return sum;
-    }
-    return expensive(1000);
+// Step event
+step_ast = gmlvm_parse_only(@"
+    if (keyboard_check(ord('W'))) y -= spd;
+    if (keyboard_check(ord('A'))) x -= spd;
+    if (place_meeting(x, y, obj_wall)) show_debug_message('Collision!');
 ");
+
+// Execute on the instance
+gmlvm_vm(create_ast, self);
+gmlvm_vm(step_ast, self);
 ```
 
-## Core API
+## API Reference
 
-### Execution Functions
+### Core Functions
 
 | Function | Description |
 |----------|-------------|
-| `gmlvm_run(code, self, other)` | Tokenize, parse, and execute GML code |
-| `gmlvm_run_cached(code, self, other)` | Execute with AST caching |
-| `gmlvm_parse(code)` | Parse code and return AST without executing |
-| `gmlvm_vm(ast, self, other)` | Execute a pre-parsed AST |
+| `gmlvm_init()` | Initialize the interpreter |
+| `gmlvm_run(code, [self], [other])` | Parse and execute GML code |
+| `gmlvm_parse_only(code)` | Parse code and return AST |
+| `gmlvm_tokenize_only(code)` | Tokenize code and return tokens |
+| `gmlvm_preprocess(code)` | Expand macros and return processed code |
+| `gmlvm_vm(ast, [self], [other])` | Execute a parsed AST |
 
-### Warning System
+### Warning Control
 
-Control runtime and parse-time warnings:
+| Function | Description |
+|----------|-------------|
+| `gmlvm_check(code)` | Check code for warnings |
+| `gmlvm_has_warnings(code)` | Returns true if code has warnings |
+| `gmlvm_warnings_enable(category)` | Enable specific warning category |
+| `gmlvm_warnings_disable(category)` | Disable specific warning category |
+
+### Sandbox (Security)
 
 ```gml
-// Disable specific warnings
-gmlvm_warnings_disable("undefined_binary_left");
-gmlvm_warnings_disable("undefined_binary_right");
+var sandbox = new gmlvm_sandbox();
+sandbox.BanFunction("instance_destroy");
+sandbox.BanVariable("global.secret");
 
-// Run code without undefined warnings
-var result = gmlvm_run("var x; return x + 5;");
-
-// Re-enable warnings
-gmlvm_warnings_enable("undefined_binary_left");
-gmlvm_warnings_enable("undefined_binary_right");
-
-// Disable all warnings
-gmlvm_warnings_disable_all();
-
-// Enable all warnings
-gmlvm_warnings_enable_all();
+gmlvm_run_sandboxed(code, sandbox, self);
 ```
 
-Available warning categories:
-- `undefined_binary_left` - Left operand is undefined in binary operation
-- `undefined_binary_right` - Right operand is undefined in binary operation
-- `undefined_unary` - Operand is undefined in unary operation
-- `unknown_operator` - Unknown operator encountered
-- `cannot_call` - Attempting to call a non-function value
-- `parse_error` - Parser errors
+## Example: Dynamic Player Controller
 
-### Static Code Analysis
-
-Check code for issues without executing:
-
+**oPlayer_Create.gml**
 ```gml
-var code = @"
-    var x;
-    var y = 10;
-    return x + y;
-";
+spd = 5;
+hp = 100;
+max_hp = 100;
+```
 
-// Check if code has warnings
-if (gmlvm_has_warnings(code)) {
-    show_debug_message("Code has issues!");
-    show_debug_message(gmlvm_check_to_string(code));
+**oPlayer_Step.gml**
+```gml
+// Movement
+if (keyboard_check(ord("W"))) y -= spd;
+if (keyboard_check(ord("A"))) x -= spd;
+if (keyboard_check(ord("S"))) y += spd;
+if (keyboard_check(ord("D"))) x += spd;
+
+// Collision with enemies
+with (obj_enemy) {
+    if (place_meeting(x, y, other)) {
+        other.hp -= 10;
+        instance_destroy();
+    }
 }
 
-// Get warnings as array
-var warnings = gmlvm_check(code);
-for (var i = 0; i < array_length(warnings); i++) {
-    var w = warnings[i];
-    show_debug_message($"[{w.category}] Line {w.line}: {w.message}");
+// Death check
+if (hp <= 0) {
+    instance_destroy();
 }
 ```
 
-## Advanced Features
-
-### Functions and Closures
-
-```gml
-var result = gmlvm_run(@"
-    function makeCounter() {
-        var count = 0;
-        return function() {
-            count++;
-            return count;
-        };
-    }
-    
-    var c1 = makeCounter();
-    var c2 = makeCounter();
-    
-    return string(c1()) + ',' + string(c1()) + ',' + string(c2());
-");
-show_debug_message(result); // "1,2,1"
-```
-
-### Static Variables
-
-```gml
-var result = gmlvm_run(@"
-    function nextId() {
-        static id = 1000;
-        return id++;
-    }
-    
-    return string(nextId()) + ',' + string(nextId()) + ',' + string(nextId());
-");
-show_debug_message(result); // "1000,1001,1002"
-```
+## 🔧 Advanced Examples
 
 ### Constructors and Inheritance
 
@@ -200,204 +171,94 @@ show_debug_message(result); // "1000,1001,1002"
 var result = gmlvm_run(@"
     function Animal(name) constructor {
         self.name = name;
-        
-        self.speak = function() {
-            return name + ' makes a sound';
-        };
     }
     
     function Dog(name, breed) : Animal(name) constructor {
         self.breed = breed;
         
-        self.speak = function() {
-            return name + ' barks!';
+        self.bark = function() {
+            return name + ' says woof!';
         };
     }
     
     var dog = new Dog('Rex', 'German Shepherd');
-    return dog.name + ' the ' + dog.breed + ': ' + dog.speak();
+    return dog.bark();
 ");
-show_debug_message(result); // "Rex the German Shepherd: Rex barks!"
+// Returns: "Rex says woof!"
 ```
 
-### Try/Catch Error Handling
+### Macros
 
 ```gml
 var result = gmlvm_run(@"
-    try {
-        throw 'Something went wrong!';
-    } catch (e) {
-        return 'Caught: ' + e;
-    } finally {
-        show_debug_message('Cleanup complete');
-    }
+    #macro WIDTH 640
+    #macro HEIGHT 480
+    #macro SCREEN_SIZE (WIDTH * HEIGHT)
+    
+    return SCREEN_SIZE;
 ");
-show_debug_message(result); // "Caught: Something went wrong!"
+// Returns: 307200
 ```
 
-### Switch Statement
+### Enums
 
 ```gml
 var result = gmlvm_run(@"
-    var grade = 'B';
-    var message;
-    
-    switch (grade) {
-        case 'A':
-            message = 'Excellent!';
-            break;
-        case 'B':
-            message = 'Good job!';
-            break;
-        case 'C':
-            message = 'Fair';
-            break;
-        default:
-            message = 'Needs improvement';
+    enum GameState {
+        MENU,
+        PLAYING = 10,
+        PAUSED,
+        GAME_OVER
     }
     
-    return message;
+    return GameState.PAUSED;
 ");
-show_debug_message(result); // "Good job!"
+// Returns: 11
 ```
 
-### Array and Struct Literals
+### Template Strings
 
 ```gml
 var result = gmlvm_run(@"
-    var arr = [1, 2, 3, 4, 5];
-    var obj = {
-        name: 'Player',
-        stats: {
-            hp: 100,
-            mp: 50
-        }
-    };
+    var player = 'Alice';
+    var score = 1000;
     
-    return obj.name + ' HP: ' + string(obj.stats.hp);
+    return $'Player: {player} | Score: {score}';
 ");
-show_debug_message(result); // "Player HP: 100"
+// Returns: "Player: Alice | Score: 1000"
 ```
 
-## Sandbox Security
+## Known Limitations
 
-Restrict access to specific functions, objects, or variables:
+- `other` inside `with` statements on instances can only access instance variables, not outer local variables
+- Some GameMaker built-in functions might fail
+- Asset indices may need to be "woken up" before use (e.g., `wakeup = string(Object2);`)
 
-```gml
-// Create sandbox
-var sandbox = new gmlvm_sandbox();
+## Testing
 
-// Blacklist dangerous functions
-sandbox.BanFunction("game_end");
-sandbox.BanFunction("room_goto");
-sandbox.BanFunction("instance_destroy");
+The interpreter has been thoroughly tested with **100+ test cases** covering all major language features. Tests include:
 
-// Blacklist sensitive objects
-sandbox.BanObject("obj_player");
-sandbox.BanObject("obj_save_manager");
+- Arithmetic precedence and operations
+- String operations and template strings
+- Control flow (if/else, loops, switch)
+- Functions (calls, recursion, closures)
+- Constructors and inheritance
+- Arrays, structs, and accessors
+- Bitwise and nullish operators
+- Macros and enums
+- Try/catch/throw
+- With statements on instances and objects
 
-// Blacklist sensitive variables
-sandbox.BanVariable("global.saveData");
+## Use Cases
 
-// Run untrusted code safely
-var result = gmlvm_run_sandboxed(@"
-    // This will throw an error - game_end is banned
-    game_end();
-", sandbox);
+- **Modding Support**: Allow players to write custom scripts
+- **Live Coding**: Modify game behavior without recompiling
+- **Scriptable Objects**: Create data-driven game entities
+- **Debug Console**: Execute arbitrary GML at runtime
+- **Procedural Generation**: Generate and execute code dynamically
+- **Educational Tools**: Teach GML programming in-game
 
-if (is_struct(result) && result.type == "runtime_error") {
-    show_debug_message("Blocked dangerous operation!");
-}
-```
+---
 
-## Debugger
+Created by [erkan612](https://github.com/erkan612)
 
-Step through code execution with the built-in debugger:
-
-```gml
-// Enable debugger
-global.__gmlvm_debugger.Enable();
-
-// Set breakpoints
-global.__gmlvm_debugger.SetBreakpoint(5);  // Break on line 5
-
-// Step modes
-global.__gmlvm_debugger.StepInto();
-global.__gmlvm_debugger.StepOver();
-global.__gmlvm_debugger.StepOut();
-global.__gmlvm_debugger.Continue();
-
-// Get current state
-var state = global.__gmlvm_debugger.GetState();
-show_debug_message($"Line: {state.current_line}, Depth: {state.call_depth}");
-
-// Disable debugger
-global.__gmlvm_debugger.Disable();
-```
-
-## Error Handling
-
-GMLVM returns error objects that can be inspected:
-
-```gml
-var result = gmlvm_run(@"
-    var x;
-    return x + 5;  // x is undefined
-");
-
-// Check if result is an error
-if (is_struct(result)) {
-    if (result.type == "parse_error") {
-        show_debug_message($"Parse Error at line {result.line}: {result.message}");
-    } else if (result.type == "runtime_error") {
-        show_debug_message($"Runtime Error at line {result.line}: {result.message}");
-    }
-}
-```
-
-## Complete Example: In-Game Console
-
-```gml
-// Create Event
-console_history = [];
-console_sandbox = new gmlvm_sandbox();
-console_sandbox.BanFunction("game_end");
-console_sandbox.BanFunction("room_goto");
-
-// When user enters a command
-function console_execute(command) {
-    // Check for warnings first
-    if (gmlvm_has_warnings(command)) {
-        var warnings = gmlvm_check_to_string(command);
-        array_push(console_history, $"Warnings: {warnings}");
-    }
-    
-    // Execute safely
-    var result = gmlvm_run_sandboxed(command, console_sandbox, self);
-    
-    // Handle result
-    if (is_struct(result) && result.type == "runtime_error") {
-        array_push(console_history, $"Error: {result.message}");
-    } else {
-        array_push(console_history, string(result));
-    }
-}
-
-// Example commands
-console_execute("health = 100; return 'Health set to 100'");
-console_execute("return health * 2");
-console_execute("function heal(amount) { health += amount; return health; } heal(25)");
-```
-
-## Performance Considerations
-
-- Use `gmlvm_parse()` and `gmlvm_vm()` for code that runs repeatedly
-- Use `gmlvm_run_cached()` to automatically cache ASTs
-- Disable warnings in production with `gmlvm_warnings_disable_all()`
-- Consider sandboxing only for untrusted user input
-
-## Limitations
-
-- Maximum 8 arguments for native GameMaker function calls (use `gmlvm_vm_call_ext` for more)
-- Static variables inside doubly-nested closures may not initialize correctly (edge case)
-- Debugger provides hooks but requires manual implementation of the debugging interface
