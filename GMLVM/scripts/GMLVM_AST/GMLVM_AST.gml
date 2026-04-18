@@ -853,3 +853,56 @@ function gmlvm_instanceof_node(_left, _right, _line = -1, _column = -1) construc
         return false;
     };
 }
+
+function gmlvm_nullish_coalesce_node(_left, _right, _line = -1, _column = -1) constructor {
+    type   = "nullish_coalesce";
+    left   = _left;
+    right  = _right;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _l = gmlvm_vm_evaluate(left, _ctx);
+        
+        // Return left if it's not undefined or pointer_null
+        if (_l != undefined) {
+            return _l;
+        }
+        
+        // Otherwise evaluate and return right
+        return gmlvm_vm_evaluate(right, _ctx);
+    };
+}
+
+function gmlvm_nullish_assign_node(_target, _value, _line = -1, _column = -1) constructor {
+    type   = "nullish_assign";
+    target = _target;
+    value  = _value;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _current = undefined;
+        
+        if (target.type == "var") {
+            _current = _ctx.GetVar(target.name);
+        } else if (target.type == "access") {
+            _current = gmlvm_vm_get_access(target, _ctx);
+        }
+        
+        // Only assign if current is undefined
+        if (_current == undefined) {
+            var _val = gmlvm_vm_evaluate(value, _ctx);
+            
+            if (target.type == "var") {
+                _ctx.SetVar(target.name, _val);
+            } else if (target.type == "access") {
+                gmlvm_vm_set_access(target, _val, _ctx);
+            }
+            
+            return _val;
+        }
+        
+        return _current;
+    };
+}

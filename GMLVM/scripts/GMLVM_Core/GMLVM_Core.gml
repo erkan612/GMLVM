@@ -282,53 +282,55 @@ function gmlvm_tokenize(_src) {
             continue;
         }
 
-        // operators (including bitwise) - unified handling
-        if (_ch == "+" || _ch == "-" || _ch == "*" || _ch == "/" ||
-            _ch == "%" || _ch == "=" || _ch == "<" || _ch == ">" ||
-            _ch == "!" || _ch == "&" || _ch == "|" || _ch == "^" || _ch == "~") {
-            
-            var _three = _ch + _ch2 + _ch3;
-            var _two = _ch + _ch2;
-            
-            // check 3-character operators
-            if (_three == "<<=" || _three == ">>=") {
-                array_push(_tokens, {
-                    type: "operator",
-                    value: _three,
-                    line: _start_line,
-                    column: _start_col
-                });
-                _i += 3; _col += 3;
-                continue;
-            }
-            
-            // check 2-character operators
-            switch (_two) {
-                case "==": case "!=": case "<=": case ">=":
-                case "&&": case "||": case "++": case "--":
-                case "+=": case "-=": case "*=": case "/=": case "%=":
-                case "<<": case ">>":
-                case "&=": case "|=": case "^=":
-                    array_push(_tokens, {
-                        type: "operator",
-                        value: _two,
-                        line: _start_line,
-                        column: _start_col
-                    });
-                    _i += 2; _col += 2;
-                    continue;
-            }
-            
-            // single character operator
-            array_push(_tokens, {
-                type: "operator",
-                value: _ch,
-                line: _start_line,
-                column: _start_col
-            });
-            _i++; _col++;
-            continue;
-        }
+        // Operators - unified handling
+		if (_ch == "+" || _ch == "-" || _ch == "*" || _ch == "/" ||
+		    _ch == "%" || _ch == "=" || _ch == "<" || _ch == ">" ||
+		    _ch == "!" || _ch == "&" || _ch == "|" || _ch == "^" || _ch == "~" ||
+		    _ch == "?") {  // Add ? here
+    
+		    var _three = _ch + _ch2 + _ch3;
+		    var _two = _ch + _ch2;
+    
+		    // Check 3-character operators first
+		    if (_three == "<<=" || _three == ">>=") {
+		        array_push(_tokens, {
+		            type: "operator",
+		            value: _three,
+		            line: _start_line,
+		            column: _start_col
+		        });
+		        _i += 3; _col += 3;
+		        continue;
+		    }
+    
+		    // Check 2-character operators - ?? must be here!
+		    switch (_two) {
+		        case "==": case "!=": case "<=": case ">=":
+		        case "&&": case "||": case "++": case "--":
+		        case "+=": case "-=": case "*=": case "/=": case "%=":
+		        case "<<": case ">>":
+		        case "&=": case "|=": case "^=":
+		        case "??": case "?=":  // These must be here
+		            array_push(_tokens, {
+		                type: "operator",
+		                value: _two,
+		                line: _start_line,
+		                column: _start_col
+		            });
+		            _i += 2; _col += 2;
+		            continue;
+		    }
+    
+		    // Single character operator
+		    array_push(_tokens, {
+		        type: "operator",
+		        value: _ch,
+		        line: _start_line,
+		        column: _start_col
+		    });
+		    _i++; _col++;
+		    continue;
+		}
 
         // hex number  0x...
         if (_ch == "0" && _ch2 == "x") {

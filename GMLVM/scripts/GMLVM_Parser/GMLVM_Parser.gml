@@ -2,6 +2,7 @@ function _gmlvm_infix_bp(_op) {
     switch (_op) {
         case "||":            return [1, 2];
         case "&&":            return [3, 4];
+        case "??":            return [3, 4];
         case "==": case "!=":
         case "<":  case ">":
         case "<=": case ">=": return [5, 6];
@@ -378,7 +379,22 @@ function gmlvm_parse_expression(_tokens, _start_index) {
     // Climb infix operators
     while (true) {
         var _t  = _gmlvm_tok(_tokens, _pos);
-        var _bp = _gmlvm_infix_bp(_t.value);
+        
+        // Check if this is ?? operator (two tokens)
+        var _t2 = _gmlvm_tok(_tokens, _pos + 1);
+        if (_t.value == "?" && _t2.value == "?") {
+            // This is ??, not ternary - handled in binary op climbing
+        }
+        
+        var _bp = [-1, -1];
+        if (_t.value == "instanceof") {
+            _bp = [5, 6];
+        } else if (_t.value == "??") {
+            _bp = [3, 4];
+        } else {
+            _bp = _gmlvm_infix_bp(_t.value);
+        }
+        
         if (_bp[0] < 0) break;
         var _l_bp = _bp[0];
         var _r_bp = _bp[1];
@@ -386,12 +402,19 @@ function gmlvm_parse_expression(_tokens, _start_index) {
         var _rr    = gmlvm_parse_expression_bp(_tokens, _pos, _r_bp);
         var _right = _rr[0];
         _pos       = _rr[1];
-        _left      = new gmlvm_binary_op_node(_t.value, _left, _right);
+        
+        if (_t.value == "??") {
+            _left = new gmlvm_nullish_coalesce_node(_left, _right, _t.line, _t.column);
+        } else {
+            _left = new gmlvm_binary_op_node(_t.value, _left, _right, _t.line, _t.column);
+        }
     }
     
-    // Handle ternary operator
+    // Handle ternary operator - ONLY if it's a single ?, not ??
     var _t = _gmlvm_tok(_tokens, _pos);
-    if (_t.type == "operator" && _t.value == "?") {
+    var _t2 = _gmlvm_tok(_tokens, _pos + 1);
+    
+    if (_t.type == "operator" && _t.value == "?" && _t2.value != "?") {
         _pos++;
         var _true_res = gmlvm_parse_expression(_tokens, _pos);
         var _true_expr = _true_res[0];
@@ -421,17 +444,29 @@ function gmlvm_parse_expression_bp(_tokens, _start, _min_bp) {
 
     while (true) {
         var _t  = _gmlvm_tok(_tokens, _pos);
-        var _bp = _gmlvm_infix_bp(_t.value);
+        
+        var _bp = [-1, -1];
+        if (_t.value == "instanceof") {
+            _bp = [5, 6];
+        } else if (_t.value == "??") {
+            _bp = [3, 4];
+        } else {
+            _bp = _gmlvm_infix_bp(_t.value);
+        }
         
         if (_bp[0] < _min_bp) break;
         var _r_bp = _bp[1];
-        _pos++; // consume the operator
+        _pos++;
         
         var _rr    = gmlvm_parse_expression_bp(_tokens, _pos, _r_bp);
         var _right = _rr[0];
         _pos       = _rr[1];
         
-        _left = new gmlvm_binary_op_node(_t.value, _left, _right, _t.line, _t.column);
+        if (_t.value == "??") {
+            _left = new gmlvm_nullish_coalesce_node(_left, _right, _t.line, _t.column);
+        } else {
+            _left = new gmlvm_binary_op_node(_t.value, _left, _right, _t.line, _t.column);
+        }
     }
 
     return [_left, _pos];
@@ -891,13 +926,19 @@ function gmlvm_parse_statement(_tokens, _pos) {
     var _node = _er[0]; _pos = _er[1];
 
     // check for assignment:  expr = expr
-    var _nx = _gmlvm_tok(_tokens, _pos);
+	var _nx = _gmlvm_tok(_tokens, _pos);
 	if (_nx.type == "operator") {
 	    var _op = _nx.value;
 	    if (_op == "=") {
 	        _pos++;
 	        var _vr = gmlvm_parse_expression(_tokens, _pos);
 	        _node = new gmlvm_assign_node(_node, _vr[0]);
+	        _pos  = _vr[1];
+	    }
+	    else if (_op == "?=") {
+	        _pos++;
+	        var _vr = gmlvm_parse_expression(_tokens, _pos);
+	        _node = new gmlvm_nullish_assign_node(_node, _vr[0]);
 	        _pos  = _vr[1];
 	    }
 	    else if (_op == "+=" || _op == "-=" || _op == "*=" || _op == "/=" || _op == "%=" ||

@@ -608,7 +608,32 @@ return a & b;
 ");
 show_debug_message("Bitwise AND simple: " + string(_test_bitwise) + " (expected 1)");
 
+show_debug_message("=== Nullish Operators ===");
+var _test68 = gmlvm_run(@"
+var x = undefined;
+return x ?? 42;
+");
+show_debug_message("68. Nullish coalesce undefined: " + string(_test68) + " (expected 42)");
 
+var _test69 = gmlvm_run(@"
+var x = 10;
+return x ?? 42;
+");
+show_debug_message("69. Nullish coalesce defined: " + string(_test69) + " (expected 10)");
+
+var _test70 = gmlvm_run(@"
+var x = undefined;
+x ?= 100;
+return x;
+");
+show_debug_message("70. Nullish assign undefined: " + string(_test70) + " (expected 100)");
+
+var _test71 = gmlvm_run(@"
+var x = 50;
+x ?= 100;
+return x;
+");
+show_debug_message("71. Nullish assign defined: " + string(_test71) + " (expected 50)");
 
 
 
