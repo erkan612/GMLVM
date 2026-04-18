@@ -367,50 +367,174 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
     
     _found = true;
     
-    // Keywords
-    switch (_name) {
-        case "true":      _value = true;      return { found: _found, value: _value };
-        case "false":     _value = false;     return { found: _found, value: _value };
-        case "undefined": _value = undefined; return { found: _found, value: _value };
-        case "self":      _value = -1;        return { found: _found, value: _value };
-        case "other":     _value = -2;        return { found: _found, value: _value };
-        case "all":       _value = -3;        return { found: _found, value: _value };
-        case "noone":     _value = -4;        return { found: _found, value: _value };
-        case "global":    _value = global;    return { found: _found, value: _value };
-    }
+    // constants
+	// // core
+    if (_name == "pointer_null") { _value = pointer_null; return { found: _found, value: _value }; }
+    if (_name == "pointer_invalid") { _value = pointer_invalid; return { found: _found, value: _value }; }
+    if (_name == "NaN") { _value = NaN; return { found: _found, value: _value }; }
+    if (_name == "infinity") { _value = infinity; return { found: _found, value: _value }; }
     
-    // Math constants
-    if (_name == "pi") {
-        _value = pi;
-        return { found: _found, value: _value };
-    }
+    // color
+    if (_name == "c_aqua")    { _value = c_aqua;    return { found: _found, value: _value }; }
+    if (_name == "c_black")   { _value = c_black;   return { found: _found, value: _value }; }
+    if (_name == "c_blue")    { _value = c_blue;    return { found: _found, value: _value }; }
+    if (_name == "c_dkgray")  { _value = c_dkgray;  return { found: _found, value: _value }; }
+    if (_name == "c_fuchsia") { _value = c_fuchsia; return { found: _found, value: _value }; }
+    if (_name == "c_gray")    { _value = c_gray;    return { found: _found, value: _value }; }
+    if (_name == "c_green")   { _value = c_green;   return { found: _found, value: _value }; }
+    if (_name == "c_lime")    { _value = c_lime;    return { found: _found, value: _value }; }
+    if (_name == "c_ltgray")  { _value = c_ltgray;  return { found: _found, value: _value }; }
+    if (_name == "c_maroon")  { _value = c_maroon;  return { found: _found, value: _value }; }
+    if (_name == "c_navy")    { _value = c_navy;    return { found: _found, value: _value }; }
+    if (_name == "c_olive")   { _value = c_olive;   return { found: _found, value: _value }; }
+    if (_name == "c_orange")  { _value = c_orange;  return { found: _found, value: _value }; }
+    if (_name == "c_purple")  { _value = c_purple;  return { found: _found, value: _value }; }
+    if (_name == "c_red")     { _value = c_red;     return { found: _found, value: _value }; }
+    if (_name == "c_silver")  { _value = c_silver;  return { found: _found, value: _value }; }
+    if (_name == "c_teal")    { _value = c_teal;    return { found: _found, value: _value }; }
+    if (_name == "c_white")   { _value = c_white;   return { found: _found, value: _value }; }
+    if (_name == "c_yellow")  { _value = c_yellow;  return { found: _found, value: _value }; }
+    
+    // keyboard
+    if (_name == "vk_anykey")   { _value = vk_anykey;   return { found: _found, value: _value }; }
+    if (_name == "vk_nokey")    { _value = vk_nokey;    return { found: _found, value: _value }; }
+    if (_name == "vk_left")     { _value = vk_left;     return { found: _found, value: _value }; }
+    if (_name == "vk_right")    { _value = vk_right;    return { found: _found, value: _value }; }
+    if (_name == "vk_up")       { _value = vk_up;       return { found: _found, value: _value }; }
+    if (_name == "vk_down")     { _value = vk_down;     return { found: _found, value: _value }; }
+    if (_name == "vk_enter")    { _value = vk_enter;    return { found: _found, value: _value }; }
+    if (_name == "vk_escape")   { _value = vk_escape;   return { found: _found, value: _value }; }
+    if (_name == "vk_space")    { _value = vk_space;    return { found: _found, value: _value }; }
+    if (_name == "vk_shift")    { _value = vk_shift;    return { found: _found, value: _value }; }
+    if (_name == "vk_control")  { _value = vk_control;  return { found: _found, value: _value }; }
+    if (_name == "vk_alt")      { _value = vk_alt;      return { found: _found, value: _value }; }
+    if (_name == "vk_backspace"){ _value = vk_backspace;return { found: _found, value: _value }; }
+    if (_name == "vk_tab")      { _value = vk_tab;      return { found: _found, value: _value }; }
+    if (_name == "vk_delete")   { _value = vk_delete;   return { found: _found, value: _value }; }
+    if (_name == "vk_insert")   { _value = vk_insert;   return { found: _found, value: _value }; }
+    if (_name == "vk_home")     { _value = vk_home;     return { found: _found, value: _value }; }
+    if (_name == "vk_end")      { _value = vk_end;      return { found: _found, value: _value }; }
+    if (_name == "vk_prior")    { _value = vk_prior;    return { found: _found, value: _value }; }
+    if (_name == "vk_next")     { _value = vk_next;     return { found: _found, value: _value }; }
+    if (_name == "vk_pause")    { _value = vk_pause;    return { found: _found, value: _value }; }
+    if (_name == "vk_printscreen") { _value = vk_printscreen; return { found: _found, value: _value }; }
+    if (_name == "vk_f1")       { _value = vk_f1;       return { found: _found, value: _value }; }
+    if (_name == "vk_f2")       { _value = vk_f2;       return { found: _found, value: _value }; }
+    if (_name == "vk_f3")       { _value = vk_f3;       return { found: _found, value: _value }; }
+    if (_name == "vk_f4")       { _value = vk_f4;       return { found: _found, value: _value }; }
+    if (_name == "vk_f5")       { _value = vk_f5;       return { found: _found, value: _value }; }
+    if (_name == "vk_f6")       { _value = vk_f6;       return { found: _found, value: _value }; }
+    if (_name == "vk_f7")       { _value = vk_f7;       return { found: _found, value: _value }; }
+    if (_name == "vk_f8")       { _value = vk_f8;       return { found: _found, value: _value }; }
+    if (_name == "vk_f9")       { _value = vk_f9;       return { found: _found, value: _value }; }
+    if (_name == "vk_f10")      { _value = vk_f10;      return { found: _found, value: _value }; }
+    if (_name == "vk_f11")      { _value = vk_f11;      return { found: _found, value: _value }; }
+    if (_name == "vk_f12")      { _value = vk_f12;      return { found: _found, value: _value }; }
+    if (_name == "vk_numpad0")  { _value = vk_numpad0;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad1")  { _value = vk_numpad1;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad2")  { _value = vk_numpad2;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad3")  { _value = vk_numpad3;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad4")  { _value = vk_numpad4;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad5")  { _value = vk_numpad5;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad6")  { _value = vk_numpad6;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad7")  { _value = vk_numpad7;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad8")  { _value = vk_numpad8;  return { found: _found, value: _value }; }
+    if (_name == "vk_numpad9")  { _value = vk_numpad9;  return { found: _found, value: _value }; }
+    if (_name == "vk_multiply") { _value = vk_multiply; return { found: _found, value: _value }; }
+    if (_name == "vk_add")      { _value = vk_add;      return { found: _found, value: _value }; }
+    if (_name == "vk_subtract") { _value = vk_subtract; return { found: _found, value: _value }; }
+    if (_name == "vk_decimal")  { _value = vk_decimal;  return { found: _found, value: _value }; }
+    if (_name == "vk_divide")   { _value = vk_divide;   return { found: _found, value: _value }; }
+    if (_name == "vk_lshift")   { _value = vk_lshift;   return { found: _found, value: _value }; }
+    if (_name == "vk_rshift")   { _value = vk_rshift;   return { found: _found, value: _value }; }
+    if (_name == "vk_lcontrol") { _value = vk_lcontrol; return { found: _found, value: _value }; }
+    if (_name == "vk_rcontrol") { _value = vk_rcontrol; return { found: _found, value: _value }; }
+    if (_name == "vk_lalt")     { _value = vk_lalt;     return { found: _found, value: _value }; }
+    if (_name == "vk_ralt")     { _value = vk_ralt;     return { found: _found, value: _value }; }
+    
+    // mouse
+    if (_name == "mb_left")     { _value = mb_left;     return { found: _found, value: _value }; }
+    if (_name == "mb_right")    { _value = mb_right;    return { found: _found, value: _value }; }
+    if (_name == "mb_middle")   { _value = mb_middle;   return { found: _found, value: _value }; }
+    if (_name == "mb_any")      { _value = mb_any;      return { found: _found, value: _value }; }
+    if (_name == "mb_none")     { _value = mb_none;     return { found: _found, value: _value }; }
+    
+    // audio
+    if (_name == "audio_falloff_exponent") { _value = audio_falloff_exponent; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_exponent_distance") { _value = audio_falloff_exponent_distance; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_inverse") { _value = audio_falloff_inverse; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_inverse_distance") { _value = audio_falloff_inverse_distance; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_linear") { _value = audio_falloff_linear; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_linear_distance") { _value = audio_falloff_linear_distance; return { found: _found, value: _value }; }
+    if (_name == "audio_falloff_none") { _value = audio_falloff_none; return { found: _found, value: _value }; }
+    if (_name == "audio_mono") { _value = audio_mono; return { found: _found, value: _value }; }
+    if (_name == "audio_stereo") { _value = audio_stereo; return { found: _found, value: _value }; }
+    if (_name == "audio_3d") { _value = audio_3d; return { found: _found, value: _value }; }
+    
+    // draw
+    if (_name == "pr_pointlist") { _value = pr_pointlist; return { found: _found, value: _value }; }
+    if (_name == "pr_linelist") { _value = pr_linelist; return { found: _found, value: _value }; }
+    if (_name == "pr_linestrip") { _value = pr_linestrip; return { found: _found, value: _value }; }
+    if (_name == "pr_trianglelist") { _value = pr_trianglelist; return { found: _found, value: _value }; }
+    if (_name == "pr_trianglestrip") { _value = pr_trianglestrip; return { found: _found, value: _value }; }
+    if (_name == "pr_trianglefan") { _value = pr_trianglefan; return { found: _found, value: _value }; }
+    
+    // blend mode
+    if (_name == "bm_normal") { _value = bm_normal; return { found: _found, value: _value }; }
+    if (_name == "bm_add") { _value = bm_add; return { found: _found, value: _value }; }
+    if (_name == "bm_subtract") { _value = bm_subtract; return { found: _found, value: _value }; }
+    if (_name == "bm_max") { _value = bm_max; return { found: _found, value: _value }; }
+    
+    // time
+    if (_name == "frame_target") { _value = frame_target; return { found: _found, value: _value }; }
+    if (_name == "frame_time") { _value = frame_time; return { found: _found, value: _value }; }
+    if (_name == "frame_delta") { _value = frame_delta; return { found: _found, value: _value }; }
+    
+    // type
+    if (_name == "gm_type_number") { _value = "number"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_string") { _value = "string"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_array") { _value = "array"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_bool") { _value = "bool"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_int32") { _value = "int32"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_int64") { _value = "int64"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_pointer") { _value = "pointer"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_undefined") { _value = "undefined"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_method") { _value = "method"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_struct") { _value = "struct"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_reference") { _value = "ref"; return { found: _found, value: _value }; }
+    if (_name == "gm_type_unknown") { _value = "unknown"; return { found: _found, value: _value }; }
+    if (_name == "null") { _value = pointer_null; return { found: _found, value: _value }; }
+    
+    // unit
+    if (_name == "gm_unit_seconds") { _value = time_source_units_seconds; return { found: _found, value: _value }; }
+    if (_name == "gm_unit_frames") { _value = time_source_units_frames; return { found: _found, value: _value }; }
     
     // function overrides
-    if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
-    if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
-    if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
-    if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
-    if (_name == "power") { _value = power; return { found: true, value: _value }; }
-    if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
-    if (_name == "round") { _value = round; return { found: true, value: _value }; }
-    if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
-    if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
-    if (_name == "random") { _value = random; return { found: true, value: _value }; }
-    if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
-    if (_name == "string") { _value = string; return { found: true, value: _value }; }
-    if (_name == "real") { _value = real; return { found: true, value: _value }; }
-    if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
-    if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
-    if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
-    if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
-    if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
-    if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
-    if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
-    if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
-    if (_name == "struct_remove") { _value = struct_remove; return { found: true, value: _value }; }
-    if (_name == "array_delete") { _value = array_delete; return { found: true, value: _value }; }
-    if (_name == "is_bool") { _value = is_bool; return { found: true, value: _value }; }
-    if (_name == "is_method") { _value = is_method; return { found: true, value: _value }; }
+    //if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
+    //if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
+    //if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
+    //if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
+    //if (_name == "power") { _value = power; return { found: true, value: _value }; }
+    //if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
+    //if (_name == "round") { _value = round; return { found: true, value: _value }; }
+    //if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
+    //if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
+    //if (_name == "random") { _value = random; return { found: true, value: _value }; }
+    //if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
+    //if (_name == "string") { _value = string; return { found: true, value: _value }; }
+    //if (_name == "real") { _value = real; return { found: true, value: _value }; }
+    //if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
+    //if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
+    //if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
+    //if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
+    //if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
+    //if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
+    //if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
+    //if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
+    //if (_name == "struct_remove") { _value = struct_remove; return { found: true, value: _value }; }
+    //if (_name == "array_delete") { _value = array_delete; return { found: true, value: _value }; }
+    //if (_name == "is_bool") { _value = is_bool; return { found: true, value: _value }; }
+    //if (_name == "is_method") { _value = is_method; return { found: true, value: _value }; }
     if (_name == "instanceof") {
 	    _value = function(_struct) {
 	        if (!is_struct(_struct)) return undefined;
