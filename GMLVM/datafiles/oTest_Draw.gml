@@ -1,0 +1,1 @@
+draw_sprite(self.sprite_index, self.image_index, self.x, self.y);

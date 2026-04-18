@@ -398,7 +398,7 @@ function _gmlvm_parse_primary(_tokens, _pos) {
 
     // identifier - variable, with postfix handling
     if (_t.type == "identifier") {
-        var _node = new gmlvm_var_node(_t.value, _line, _col);
+        var _node = new gmlvm_var_node(_t.value, false, _line, _col);
         return _gmlvm_parse_postfix(_tokens, _pos + 1, _node);
     }
 

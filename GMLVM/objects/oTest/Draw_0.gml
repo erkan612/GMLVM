@@ -1,0 +1,1 @@
+gmlvm_vm(draw_parse, self);

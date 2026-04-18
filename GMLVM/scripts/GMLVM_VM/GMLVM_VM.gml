@@ -563,8 +563,14 @@ function gmlvm_vm_context(_self, _other) constructor {
             return;
         }
         
-        // doesnt exist anywhere - create as local
-        locals[$ _name] = _value;
+        // doesnt exist anywhere - create in self
+	    if (is_struct(self_inst)) {
+	        self_inst[$ _name] = _value;
+	    } else if (instance_exists(self_inst)) {
+	        variable_instance_set(self_inst, _name, _value);
+	    } else {
+	        locals[$ _name] = _value; // fallback to local if no 'self' provided
+	    }
     };
     
     static SetStatic = function(_name, _value) {

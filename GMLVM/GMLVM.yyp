@@ -8,12 +8,16 @@
     "children":[],
     "name":"Default",
   },
-  "defaultScriptType":0,
+  "defaultScriptType":1,
   "Folders":[
     {"$GMFolder":"","%Name":"GMLVM","folderPath":"folders/GMLVM.yy","name":"GMLVM","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
   "ForcedPrefabProjectReferences":[],
-  "IncludedFiles":[],
+  "IncludedFiles":[
+    {"$GMIncludedFile":"","%Name":"oTest_Create.gml","CopyToMask":-1,"filePath":"datafiles","name":"oTest_Create.gml","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+    {"$GMIncludedFile":"","%Name":"oTest_Draw.gml","CopyToMask":-1,"filePath":"datafiles","name":"oTest_Draw.gml","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+    {"$GMIncludedFile":"","%Name":"oTest_Step.gml","CopyToMask":-1,"filePath":"datafiles","name":"oTest_Step.gml","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+  ],
   "isEcma":false,
   "LibraryEmitters":[],
   "MetaData":{
@@ -30,6 +34,7 @@
     {"id":{"name":"GMLVM_Parser","path":"scripts/GMLVM_Parser/GMLVM_Parser.yy",},},
     {"id":{"name":"GMLVM_Sandbox","path":"scripts/GMLVM_Sandbox/GMLVM_Sandbox.yy",},},
     {"id":{"name":"GMLVM_VM","path":"scripts/GMLVM_VM/GMLVM_VM.yy",},},
+    {"id":{"name":"sTest","path":"sprites/sTest/sTest.yy",},},
   ],
   "resourceType":"GMProject",
   "resourceVersion":"2.0",

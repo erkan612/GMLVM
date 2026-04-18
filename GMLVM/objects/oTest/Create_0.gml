@@ -2,8 +2,42 @@
 todo; add do/until and with statements
 */
 
+file_read = function(_path) {
+    if (!file_exists(_path)) {
+        return ""; // or you could throw an error
+    }
+
+    var file = file_text_open_read(_path);
+    var content = "";
+
+    while (!file_text_eof(file)) {
+        content += file_text_read_string(file);
+        
+        if (!file_text_eof(file)) {
+            content += "\n";
+        }
+
+        file_text_readln(file);
+    }
+
+    file_text_close(file);
+
+    return content;
+};
+
+create_code = file_read("oTest_Create.gml");
+step_code = file_read("oTest_Step.gml");
+draw_code = file_read("oTest_Draw.gml");
+
 gmlvm_init();
 
+create_parse = gmlvm_parse_only(create_code);
+step_parse = gmlvm_parse_only(step_code);
+draw_parse = gmlvm_parse_only(draw_code);
+
+gmlvm_vm(create_parse, self);
+
+/*
 show_debug_message("=== Basic Arithmetic and Precedence ===");
 var _test1 = gmlvm_run(@"
 return 2 + 3 * 4;

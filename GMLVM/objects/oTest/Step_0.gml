@@ -1,0 +1,1 @@
+gmlvm_vm(step_parse, self);
