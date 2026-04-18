@@ -30,6 +30,7 @@ function gmlvm_var_node(_name, _is_static = false, _line = -1, _column = -1) con
     Execute = function(_ctx) {
         if (name == "self") return _ctx.GetSelf();
         if (name == "other") return _ctx.GetOther();
+        if (name == "global") { return global; }
         return _ctx.GetVar(name);
     };
 }

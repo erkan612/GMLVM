@@ -6,6 +6,16 @@ function gmlvm_vm_get_access(_node, _ctx) {
     // Dot access
     if (_kind == "dot") {
         var _prop = _index.value;
+		
+		if (_target == global) {
+			if (variable_global_exists(_prop)) {
+				return variable_global_get(_prop);
+			}
+			else {
+				return undefined;
+			}
+		}
+		
         if (is_struct(_target)) {
             return _target[$ _prop];
         } else if (instance_exists(_target)) {
@@ -85,6 +95,12 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
     
     if (_kind == "dot") {
         var _prop = _index.value;
+		
+		if (_target == global) {
+			variable_global_set(_prop, _value);
+			return;
+		}
+		
         if (is_struct(_target)) {
             _target[$ _prop] = _value;
         } else if (instance_exists(_target)) {
@@ -812,46 +828,6 @@ function gmlvm_vm_evaluate(_node, _ctx) {
 //    }
 //}
 
-function gmlvm_vm(_ast, _self = self, _other = other) {
-    // If _self is an instance, run the entire VM in that instance's context
-    if (instance_exists(_self) || is_struct(_self)) {
-        var _result;
-        with (_self) {
-            var _ctx = new gmlvm_vm_context(id, _other);
-            try {
-                _result = gmlvm_vm_evaluate(_ast, _ctx);
-                
-                if (is_struct(_result) && struct_exists(_result, "type")) {
-                    if (_result.type == "return") {
-                        _result = _result.value;
-                    }
-                }
-            } catch (_err) {
-                show_debug_message("VM Runtime Error: " + string(_err));
-                _result = undefined;
-            }
-        }
-        return _result;
-    }
-    
-    // For structs or no instance, just run normally
-    var _ctx = new gmlvm_vm_context(_self, _other);
-    try {
-        var _result = gmlvm_vm_evaluate(_ast, _ctx);
-        
-        if (is_struct(_result) && struct_exists(_result, "type")) {
-            if (_result.type == "return") {
-                return _result.value;
-            }
-        }
-        
-        return _result;
-    } catch (_err) {
-        show_debug_message("VM Runtime Error: " + string(_err));
-        return undefined;
-    }
-}
-
 /*
 function gmlvm_vm(_ast, _self = self, _other = other) {
     if (object_exists(_self) || is_struct(_self)) {
@@ -881,6 +857,88 @@ function gmlvm_vm(_ast, _self = self, _other = other) {
         if (is_struct(_result) && struct_exists(_result, "type")) {
             if (_result.type == "return") {
                 return _result.value;
+            }
+        }
+        
+        return _result;
+    } catch (_err) {
+        show_debug_message("VM Runtime Error: " + string(_err));
+        return undefined;
+    }
+}*/
+
+//function gmlvm_vm(_ast, _self = self, _other = other) {
+//    // If _self is an instance, run the entire VM in that instance's context
+//    if (instance_exists(_self) || is_struct(_self)) {
+//        var _result;
+//        with (_self) {
+//            var _ctx = new gmlvm_vm_context(id, _other);
+//            try {
+//                _result = gmlvm_vm_evaluate(_ast, _ctx);
+//                
+//                if (is_struct(_result) && struct_exists(_result, "type")) {
+//                    if (_result.type == "return") {
+//                        _result = _result.value;
+//                    }
+//                }
+//            } catch (_err) {
+//                show_debug_message("VM Runtime Error: " + string(_err));
+//                _result = undefined;
+//            }
+//        }
+//        return _result;
+//    }
+//    
+//    // For structs or no instance, just run normally
+//    var _ctx = new gmlvm_vm_context(_self, _other);
+//    try {
+//        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+//        
+//        if (is_struct(_result) && struct_exists(_result, "type")) {
+//            if (_result.type == "return") {
+//                return _result.value;
+//            }
+//        }
+//        
+//        return _result;
+//    } catch (_err) {
+//        show_debug_message("VM Runtime Error: " + string(_err));
+//        return undefined;
+//    }
+//}
+
+function gmlvm_vm(_ast, _self = self, _other = other) {
+    if (instance_exists(_self) || is_struct(_self)) {
+        var _result;
+        with (_self) {
+            var _ctx = new gmlvm_vm_context(id, _other);
+            try {
+                _result = gmlvm_vm_evaluate(_ast, _ctx);
+                
+                if (is_struct(_result) && struct_exists(_result, "type")) {
+                    if (_result.type == "return") {
+                        _result = _result.value;
+                    } else if (_result.type == "exit") {
+                        _result = undefined;
+                    }
+                }
+            } catch (_err) {
+                show_debug_message("VM Runtime Error: " + string(_err));
+                _result = undefined;
+            }
+        }
+        return _result;
+    }
+    
+    var _ctx = new gmlvm_vm_context(_self, _other);
+    try {
+        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+        
+        if (is_struct(_result) && struct_exists(_result, "type")) {
+            if (_result.type == "return") {
+                return _result.value;
+            } else if (_result.type == "exit") {
+                return undefined;
             }
         }
         
