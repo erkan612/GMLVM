@@ -220,7 +220,7 @@ function gmlvm_tokenize(_src) {
     var _kw_list  = ["if","else","while","for","repeat","switch","case",
                      "default","break","continue","return","var","static",
                      "function","constructor","new","true","false","try",
-                     "catch","finally","throw","do","until","with","delete"];
+                     "catch","finally","throw","do","until","with","delete", "enum"];
     for (var _k = 0; _k < array_length(_kw_list); _k++) {
         ds_map_set(_keywords, _kw_list[_k], true);
     }
@@ -281,6 +281,19 @@ function gmlvm_tokenize(_src) {
             }
             continue;
         }
+
+		// Accessors - check for [@, [$, [#, [?
+		if (_ch == "[" && (_ch2 == "@" || _ch2 == "$" || _ch2 == "#" || _ch2 == "?")) {
+		    var _accessor = _ch + _ch2;
+		    array_push(_tokens, {
+		        type: "accessor",
+		        value: _accessor,
+		        line: _start_line,
+		        column: _start_col
+		    });
+		    _i += 2; _col += 2;
+		    continue;
+		}
 
         // Operators - unified handling
 		if (_ch == "+" || _ch == "-" || _ch == "*" || _ch == "/" ||
@@ -537,9 +550,101 @@ function gmlvm_run_cached(_code, _self = self, _other = other) {
 }
 
 function gmlvm_run(_code, _self = self, _other = other) {
-    var _tokens = gmlvm_tokenize(_code);
+    var _processed = gmlvm_preprocess(_code);
+    var _tokens = gmlvm_tokenize(_processed);
     var _ast = gmlvm_parse(_tokens);
     return gmlvm_vm(_ast, _self, _other);
+}
+
+function gmlvm_tokenize_only(_code) {
+    var _processed = gmlvm_preprocess(_code);
+    return gmlvm_tokenize(_processed);
+}
+
+function gmlvm_parse_only(_code) {
+    var _processed = gmlvm_preprocess(_code);
+    var _tokens = gmlvm_tokenize(_processed);
+    return gmlvm_parse(_tokens);
+}
+
+function gmlvm_preprocess(_code) {
+    var _macros = ds_map_create();
+    var _lines = string_split(_code, "\n");
+    var _processed_code = "";
+    
+    // First pass: collect all macros
+    for (var _i = 0; _i < array_length(_lines); _i++) {
+        var _line = _lines[_i];
+        var _trimmed = string_trim(_line);
+        
+        if (string_pos("#macro", _trimmed) == 1) {
+            var _parts = string_split(string_trim(string_delete(_trimmed, 1, 6)), " ");
+            if (array_length(_parts) >= 2) {
+                var _macro_name = _parts[0];
+                var _macro_value = "";
+                for (var _j = 1; _j < array_length(_parts); _j++) {
+                    if (_macro_value != "") _macro_value += " ";
+                    _macro_value += _parts[_j];
+                }
+                ds_map_set(_macros, _macro_name, _macro_value);
+            }
+        }
+    }
+    
+    // Expand macro values (resolve nested macros)
+    var _macro_names = ds_map_keys_to_array(_macros);
+    var _changed = true;
+    var _max_iterations = 10;
+    var _iter = 0;
+    
+    while (_changed && _iter < _max_iterations) {
+        _changed = false;
+        _iter++;
+        
+        for (var _i = 0; _i < array_length(_macro_names); _i++) {
+            var _name = _macro_names[_i];
+            var _value = _macros[? _name];
+            var _expanded = _value;
+            
+            for (var _j = 0; _j < array_length(_macro_names); _j++) {
+                var _other_name = _macro_names[_j];
+                if (_other_name != _name) {
+                    var _other_value = _macros[? _other_name];
+                    var _new_value = string_replace_all(_expanded, _other_name, _other_value);
+                    if (_new_value != _expanded) {
+                        _expanded = _new_value;
+                        _changed = true;
+                    }
+                }
+            }
+            
+            _macros[? _name] = _expanded;
+        }
+    }
+    
+    // Second pass: process lines and replace macros
+    for (var _i = 0; _i < array_length(_lines); _i++) {
+        var _line = _lines[_i];
+        var _trimmed = string_trim(_line);
+        
+        // Skip macro definitions and region directives
+        if (string_pos("#macro", _trimmed) == 1) continue;
+        if (string_pos("#region", _trimmed) == 1) continue;
+        if (string_pos("#endregion", _trimmed) == 1) continue;
+        
+        // Replace macros
+        var _processed_line = _line;
+        for (var _j = 0; _j < array_length(_macro_names); _j++) {
+            var _name = _macro_names[_j];
+            var _value = _macros[? _name];
+            _processed_line = string_replace_all(_processed_line, _name, _value);
+        }
+        
+        _processed_code += _processed_line + "\n";
+    }
+    
+    ds_map_destroy(_macros);
+    return _processed_code;
 }
 
 function gmlvm_cache() constructor {

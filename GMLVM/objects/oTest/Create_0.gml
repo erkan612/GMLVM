@@ -730,11 +730,74 @@ return result;
 ");
 show_debug_message("79. Other with instance: " + string(_test79) + " (expected 70)");
 
+show_debug_message("=== Accessors ===");
+var _test80 = gmlvm_run(@"
+var arr = [10, 20, 30];
+return arr[@ 1];
+");
+show_debug_message("80. Array accessor: " + string(_test80) + " (expected 20)");
 
+var _test81 = gmlvm_run(@"
+var obj = { a: 100, b: 200 };
+return obj[$ 'b'];
+");
+show_debug_message("81. Struct accessor: " + string(_test81) + " (expected 200)");
 
+var _test82 = gmlvm_run(@"
+var map = ds_map_create();
+ds_map_set(map, 'key', 42);
+var val = map[? 'key'];
+ds_map_destroy(map);
+return val;
+");
+show_debug_message("82. Map accessor: " + string(_test82) + " (expected 42)");
 
+show_debug_message("=== Macros ===");
+var _test83 = gmlvm_run(@"
+#macro WIDTH 640
+#macro HEIGHT 480
+#macro TITLE 'Game'
+return WIDTH;
+");
+show_debug_message("83. Macro number: " + string(_test83) + " (expected 640)");
 
+var _test84 = gmlvm_run(@"
+#macro PI 3.14159
+#macro TAU (PI * 2)
+return TAU;
+");
+show_debug_message("84. Macro expression: " + string(_test84) + " (expected 6.28318)");
 
+show_debug_message("=== Enums ===");
+var _test85 = gmlvm_run(@"
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+return Color.Red;
+");
+show_debug_message("85. Enum first value: " + string(_test85) + " (expected 0)");
+
+var _test86 = gmlvm_run(@"
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+return Color.Blue;
+");
+show_debug_message("86. Enum auto increment: " + string(_test86) + " (expected 2)");
+
+var _test87 = gmlvm_run(@"
+enum Values {
+    A = 10,
+    B = 20,
+    C = 30
+}
+return Values.B;
+");
+show_debug_message("87. Enum explicit values: " + string(_test87) + " (expected 20)");
 
 
 

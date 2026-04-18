@@ -333,6 +333,36 @@ function _gmlvm_parse_postfix(_tokens, _pos, _node) {
             continue;
         }
         
+        // Accessors: expr [@ index], expr [$ index], expr [# index], expr [? index]
+        if (_next.type == "accessor") {
+            var _kind = "bracket";
+            var _accessor_type = _next.value;  // "[@", "[$", "[#", "[?"
+            _pos++;
+            
+            var _ir = gmlvm_parse_expression(_tokens, _pos);
+            var _index = _ir[0];
+            _pos = _ir[1];
+            
+            var _close = _gmlvm_tok(_tokens, _pos);
+            if (_close.type == "bracket" && _close.value == "]") _pos++;
+            
+            _node = new gmlvm_access_node(_node, _index, _accessor_type);
+            continue;
+        }
+        
+        // Regular bracket access: expr [ index ]
+        if (_next.type == "bracket" && _next.value == "[") {
+            var _p = _pos + 1;
+            var _ir = gmlvm_parse_expression(_tokens, _p);
+            var _index = _ir[0];
+            _p = _ir[1];
+            var _close = _gmlvm_tok(_tokens, _p);
+            if (_close.type == "bracket" && _close.value == "]") _p++;
+            _node = new gmlvm_access_node(_node, _index, "bracket");
+            _pos = _p;
+            continue;
+        }
+        
         // bracket access:  expr [ index ]
         if (_next.type == "bracket" && _next.value == "[") {
             var _p = _pos + 1;
@@ -479,6 +509,77 @@ function gmlvm_parse_statement(_tokens, _pos) {
     if (_t.type == "separator" && _t.value == ";") {
         return [undefined, _pos + 1];
     }
+	
+	// enum declaration
+	if (_t.type == "keyword" && _t.value == "enum") {
+	    var _line = _t.line;
+	    var _col = _t.column;
+	    _pos++;
+    
+	    var _name_tok = _gmlvm_tok(_tokens, _pos);
+	    var _enum_name = "";
+	    if (_name_tok.type == "identifier") {
+	        _enum_name = _name_tok.value;
+	        _pos++;
+	    }
+    
+	    var _open = _gmlvm_tok(_tokens, _pos);
+	    if (!(_open.type == "brace" && _open.value == "{")) {
+	        gmlvm_warning("parse_error", "Expected '{' after enum name", _open.line, _open.column);
+	        return [undefined, _pos];
+	    }
+	    _pos++;
+    
+	    var _fields = [];
+	    var _counter = 0;
+    
+	    while (true) {
+	        var _next = _gmlvm_tok(_tokens, _pos);
+	        if (_next.type == "brace" && _next.value == "}") {
+	            _pos++;
+	            break;
+	        }
+        
+	        if (_next.type == "identifier") {
+	            var _field_name = _next.value;
+	            _pos++;
+            
+	            var _value = undefined;
+	            var _eq = _gmlvm_tok(_tokens, _pos);
+	            if (_eq.type == "operator" && _eq.value == "=") {
+	                _pos++;
+	                var _er = gmlvm_parse_expression(_tokens, _pos);
+	                _value = _er[0];
+	                _pos = _er[1];
+	            } else {
+	                _value = new gmlvm_number_node(_counter, _line, _col);
+	            }
+            
+	            array_push(_fields, { key: _field_name, value: _value });
+            
+	            // Update counter if value is a number literal
+	            if (_value.type == "number") {
+	                _counter = _value.value + 1;
+	            } else {
+	                _counter++;
+	            }
+            
+	            var _comma = _gmlvm_tok(_tokens, _pos);
+	            if (_comma.type == "separator" && _comma.value == ",") {
+	                _pos++;
+	            }
+	        } else {
+	            break;
+	        }
+	    }
+    
+	    // Create enum as a struct and assign to variable
+	    var _enum_struct = new gmlvm_struct_node(_fields, _line, _col);
+	    var _var_node = new gmlvm_var_node(_enum_name, _line, _col);
+	    var _assign_node = new gmlvm_assign_node(_var_node, _enum_struct, _line, _col);
+    
+	    return [_assign_node, _pos];
+	}
 	
 	// try statement
     if (_t.type == "keyword" && _t.value == "try") {

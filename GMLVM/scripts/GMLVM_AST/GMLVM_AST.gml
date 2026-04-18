@@ -466,7 +466,7 @@ function gmlvm_access_node(_target, _index, _kind) constructor {
     type   = "access";
     target = _target;
     index  = _index;
-    kind   = _kind;   // "bracket", "dot"
+    kind   = _kind;   // "bracket", "dot", "[@", "[$", "[#", "[?"
     
     static Execute = function(_ctx) {
         return gmlvm_vm_get_access(self, _ctx);

@@ -1,8 +1,10 @@
 function gmlvm_vm_get_access(_node, _ctx) {
     var _target = gmlvm_vm_evaluate(_node.target, _ctx);
     var _index = _node.index;
+    var _kind = _node.kind;
     
-    if (_node.kind == "dot") {
+    // Dot access
+    if (_kind == "dot") {
         var _prop = _index.value;
         if (is_struct(_target)) {
             return _target[$ _prop];
@@ -10,27 +12,65 @@ function gmlvm_vm_get_access(_node, _ctx) {
             if (_prop == "id") return _target;
             if (_prop == "x") return _target.x;
             if (_prop == "y") return _target.y;
-            if (_prop == "object_index") return _target.object_index;
-            if (_prop == "sprite_index") return _target.sprite_index;
-            
             if (variable_instance_exists(_target, _prop)) {
                 return variable_instance_get(_target, _prop);
             }
         }
         return undefined;
-    } else if (_node.kind == "bracket") {
-        var _idx = gmlvm_vm_evaluate(_index, _ctx);
+    }
+    
+    // Bracket and accessor access
+    var _idx = gmlvm_vm_evaluate(_index, _ctx);
+    
+    // Array accessor [@]
+    if (_kind == "[@") {
         if (is_array(_target)) {
             return _target[_idx];
-        } else if (is_struct(_target)) {
+        }
+        return undefined;
+    }
+    
+    // Struct accessor [$]
+    if (_kind == "[$") {
+        if (is_struct(_target)) {
             return _target[$ _idx];
-        } else if (instance_exists(_target)) {
-            var _prop = string(_idx);
-            if (variable_instance_exists(_target, _prop)) {
-                return variable_instance_get(_target, _prop);
+        }
+        return undefined;
+    }
+    
+    // Map accessor [?]
+    if (_kind == "[?") {
+        if (ds_exists(_target, ds_type_map)) {
+            return ds_map_find_value(_target, _idx);
+        }
+        return undefined;
+    }
+    
+    // Grid accessor [#]
+    if (_kind == "[#") {
+        // Grid access is typically 2D: grid[# x, y]
+        if (is_array(_idx)) {
+            var _x = _idx[0];
+            var _y = _idx[1];
+            if (ds_exists(_target, ds_type_grid)) {
+                return ds_grid_get(_target, _x, _y);
             }
         }
         return undefined;
+    }
+    
+    // Regular bracket - guess type
+    if (is_array(_target)) {
+        return _target[_idx];
+    } else if (is_struct(_target)) {
+        return _target[$ _idx];
+    } else if (ds_exists(_target, ds_type_map)) {
+        return ds_map_find_value(_target, _idx);
+    } else if (instance_exists(_target)) {
+        var _prop = string(_idx);
+        if (variable_instance_exists(_target, _prop)) {
+            return variable_instance_get(_target, _prop);
+        }
     }
     
     return undefined;
@@ -39,20 +79,43 @@ function gmlvm_vm_get_access(_node, _ctx) {
 function gmlvm_vm_set_access(_node, _value, _ctx) {
     var _target = gmlvm_vm_evaluate(_node.target, _ctx);
     var _index = _node.index;
+    var _kind = _node.kind;
     
-    if (_node.kind == "dot") {
+    if (_kind == "dot") {
         var _prop = _index.value;
         if (is_struct(_target)) {
             _target[$ _prop] = _value;
         } else if (instance_exists(_target)) {
             variable_instance_set(_target, _prop, _value);
         }
-    } else if (_node.kind == "bracket") {
-        var _idx = gmlvm_vm_evaluate(_index, _ctx);
+        return;
+    }
+    
+    var _idx = gmlvm_vm_evaluate(_index, _ctx);
+    
+    if (_kind == "[@") {
+        if (is_array(_target)) {
+            _target[_idx] = _value;
+        }
+    } else if (_kind == "[$") {
+        if (is_struct(_target)) {
+            _target[$ _idx] = _value;
+        }
+    } else if (_kind == "[?") {
+        if (ds_exists(_target, ds_type_map)) {
+            ds_map_set(_target, _idx, _value);
+        }
+    } else if (_kind == "[#") {
+        if (is_array(_idx) && ds_exists(_target, ds_type_grid)) {
+            ds_grid_set(_target, _idx[0], _idx[1], _value);
+        }
+    } else {
         if (is_array(_target)) {
             _target[_idx] = _value;
         } else if (is_struct(_target)) {
             _target[$ _idx] = _value;
+        } else if (ds_exists(_target, ds_type_map)) {
+            ds_map_set(_target, _idx, _value);
         } else if (instance_exists(_target)) {
             variable_instance_set(_target, string(_idx), _value);
         }
