@@ -492,19 +492,19 @@ function gmlvm_call_node(_callee, _args, _line = -1, _column = -1) constructor {
     };
 }
 
-function gmlvm_function_node(_name, _params, _body, _is_constructor = false, _inherit = undefined, _inherit_args = undefined, _line = -1, _column = -1) constructor {
-    type           = "function";
-    name           = _name;
-    params         = _params;
-    body           = _body;
-    is_constructor = _is_constructor;
-    inherit        = _inherit;
-    inherit_args   = _inherit_args;
-    line           = _line;
-    column         = _column;
+function gmlvm_function_node(_name, _params, _param_defaults, _body, _is_constructor = false, _inherit = undefined, _inherit_args = undefined, _line = -1, _column = -1) constructor {
+    type            = "function";
+    name            = _name;
+    params          = _params;
+    param_defaults  = _param_defaults;
+    body            = _body;
+    is_constructor  = _is_constructor;
+    inherit         = _inherit;
+    inherit_args    = _inherit_args;
+    line            = _line;
+    column          = _column;
     
     Execute = function(_ctx) {
-        // capturing current locals for closure
         var _captured_locals = {};
         var _names = struct_get_names(_ctx.locals);
         for (var _i = 0; _i < array_length(_names); _i++) {
@@ -520,6 +520,7 @@ function gmlvm_function_node(_name, _params, _body, _is_constructor = false, _in
             __gmlvm_type: "function",
             __gmlvm_name: name,
             __gmlvm_params: params,
+            __gmlvm_param_defaults: param_defaults,
             __gmlvm_body: body,
             __gmlvm_is_constructor: is_constructor,
             __gmlvm_inherit: inherit,
@@ -936,5 +937,26 @@ function gmlvm_nullish_assign_node(_target, _value, _line = -1, _column = -1) co
         }
         
         return _current;
+    };
+}
+
+function gmlvm_template_string_node(_parts, _line = -1, _column = -1) constructor {
+    type   = "template_string";
+    parts  = _parts;
+    line   = _line;
+    column = _column;
+    
+    static Execute = function(_ctx) {
+        var _result = "";
+        for (var _i = 0; _i < array_length(parts); _i++) {
+            var _part = parts[_i];
+            if (_part.type == "string") {
+                _result += _part.value;
+            } else {
+                var _val = gmlvm_vm_evaluate(_part.value, _ctx);
+                _result += string(_val);
+            }
+        }
+        return _result;
     };
 }

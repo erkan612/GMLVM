@@ -282,6 +282,126 @@ function gmlvm_tokenize(_src) {
             continue;
         }
 
+		// Template string: $"Hello {name}!"
+		if (_ch == "$" && (_ch2 == chr(34) || _ch2 == chr(39))) {
+		    var _quote = _ch2;
+		    _i += 2; _col += 2;
+		    var _parts = [];  // Array of string parts and expression ASTs
+    
+		    var _current_str = "";
+    
+		    while (_i <= _len) {
+		        var _sc = string_char_at(_src, _i);
+        
+		        if (_sc == "{") {
+		            // Save current string part
+		            if (_current_str != "") {
+		                array_push(_parts, { type: "string", value: _current_str });
+		                _current_str = "";
+		            }
+            
+		            _i++; _col++;
+		            var _expr_str = "";
+		            var _brace_count = 1;
+            
+		            while (_i <= _len && _brace_count > 0) {
+		                var _ec = string_char_at(_src, _i);
+		                if (_ec == "{") _brace_count++;
+		                else if (_ec == "}") _brace_count--;
+                
+		                if (_brace_count > 0) {
+		                    _expr_str += _ec;
+		                    _i++; _col++;
+		                }
+		            }
+            
+		            // Parse the expression into an AST
+		            if (_expr_str != "") {
+		                var _expr_tokens = gmlvm_tokenize(_expr_str);
+		                var _expr_ast = gmlvm_parse_expression(_expr_tokens, 0);
+		                array_push(_parts, { type: "expression", value: _expr_ast[0] });
+		            }
+            
+		            if (_i <= _len) {
+		                _i++; _col++; // Skip closing }
+		            }
+		        } else if (_sc == _quote) {
+		            _i++; _col++;
+		            break;
+		        } else if (_sc == "\\") {
+		            _i++; _col++;
+		            if (_i > _len) break;
+		            var _esc = string_char_at(_src, _i); _i++; _col++;
+		            if (_esc == "n") _current_str += "\n";
+		            else if (_esc == "t") _current_str += "\t";
+		            else if (_esc == chr(34)) _current_str += chr(34);
+		            else if (_esc == chr(39)) _current_str += chr(39);
+		            else if (_esc == "\\") _current_str += "\\";
+		            else if (_esc == "{") _current_str += "{";
+		            else if (_esc == "}") _current_str += "}";
+		            else _current_str += _esc;
+		        } else if (_sc == "\n") {
+		            _line++; _col = 1;
+		            _current_str += _sc; _i++;
+		        } else {
+		            _current_str += _sc; _i++; _col++;
+		        }
+		    }
+    
+		    // Save final string part
+		    if (_current_str != "") {
+		        array_push(_parts, { type: "string", value: _current_str });
+		    }
+    
+		    array_push(_tokens, {
+		        type: "template_string",
+		        parts: _parts,
+		        line: _start_line,
+		        column: _start_col
+		    });
+		    continue;
+		}
+		
+		// Multi-line string: @"line1\nline2"
+		if (_ch == "@" && (_ch2 == chr(34) || _ch2 == chr(39))) {
+		    var _quote = _ch2;
+		    _i += 2; _col += 2;
+		    var _s = "";
+    
+		    while (_i <= _len) {
+		        var _sc = string_char_at(_src, _i);
+        
+		        if (_sc == _quote) {
+		            // Check if it's double quote escape ""
+		            if (_i + 1 <= _len && string_char_at(_src, _i + 1) == _quote) {
+		                _s += _quote;
+		                _i += 2; _col += 2;
+		            } else {
+		                _i++; _col++;
+		                break;
+		            }
+		        } else if (_sc == "\r") {
+		            _i++;
+		            // Skip \r
+		        } else if (_sc == "\n") {
+		            _s += "\n";
+		            _line++; _col = 1;
+		            _i++;
+		        } else {
+		            _s += _sc;
+		            _i++; _col++;
+		        }
+		    }
+    
+		    array_push(_tokens, {
+		        type: "string",
+		        value: _s,
+		        line: _start_line,
+		        column: _start_col
+		    });
+		    continue;
+		}
+
 		// Accessors - check for [@, [$, [#, [?
 		if (_ch == "[" && (_ch2 == "@" || _ch2 == "$" || _ch2 == "#" || _ch2 == "?")) {
 		    var _accessor = _ch + _ch2;

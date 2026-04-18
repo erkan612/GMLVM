@@ -62,6 +62,11 @@ function _gmlvm_parse_primary(_tokens, _pos) {
     if (_t.type == "string") {
         return [new gmlvm_string_node(_t.value, _line, _col), _pos + 1];
     }
+	
+	// template string literal
+	if (_t.type == "template_string") {
+	    return [new gmlvm_template_string_node(_t.parts, _line, _col), _pos + 1];
+	}
 
     // array literal: [ expr, expr, ... ]
     if (_t.type == "bracket" && _t.value == "[") {
@@ -215,33 +220,44 @@ function _gmlvm_parse_primary(_tokens, _pos) {
             _pos++;
         }
         
-        var _open = _gmlvm_tok(_tokens, _pos);
-        if (!(_open.type == "paren" && _open.value == "(")) {
-            return [new gmlvm_parse_error("Expected '(' in function declaration", _open.line, _open.column), _pos];
-        }
-        _pos++;
-        
         var _params = [];
-        var _close = _gmlvm_tok(_tokens, _pos);
-        if (!(_close.type == "paren" && _close.value == ")")) {
-            while (true) {
-                var _p = _gmlvm_tok(_tokens, _pos);
-                if (_p.type == "identifier") {
-                    array_push(_params, _p.value);
-                    _pos++;
-                } else {
-                    break;
-                }
-                var _sep = _gmlvm_tok(_tokens, _pos);
-                if (_sep.type == "separator" && _sep.value == ",") {
-                    _pos++;
-                } else {
-                    break;
-                }
-            }
-        }
-        var _rp = _gmlvm_tok(_tokens, _pos);
-        if (_rp.type == "paren" && _rp.value == ")") _pos++;
+		var _param_defaults = {};
+		var _open = _gmlvm_tok(_tokens, _pos);
+		if (!(_open.type == "paren" && _open.value == "(")) {
+		    return [new gmlvm_parse_error("Expected '(' in function declaration", _open.line, _open.column), _pos];
+		}
+		_pos++;
+
+		var _close = _gmlvm_tok(_tokens, _pos);
+		if (!(_close.type == "paren" && _close.value == ")")) {
+		    while (true) {
+		        var _p = _gmlvm_tok(_tokens, _pos);
+		        if (_p.type == "identifier") {
+		            var _param_name = _p.value;
+		            array_push(_params, _param_name);
+		            _pos++;
+            
+		            // Check for default value
+		            var _eq = _gmlvm_tok(_tokens, _pos);
+		            if (_eq.type == "operator" && _eq.value == "=") {
+		                _pos++;
+		                var _default_res = gmlvm_parse_expression(_tokens, _pos);
+		                _param_defaults[$ _param_name] = _default_res[0];
+		                _pos = _default_res[1];
+		            }
+		        } else {
+		            break;
+		        }
+		        var _sep = _gmlvm_tok(_tokens, _pos);
+		        if (_sep.type == "separator" && _sep.value == ",") {
+		            _pos++;
+		        } else {
+		            break;
+		        }
+		    }
+		}
+		var _rp = _gmlvm_tok(_tokens, _pos);
+		if (_rp.type == "paren" && _rp.value == ")") _pos++;
         
         // check for inheritance (:) and constructor keyword
         var _is_constructor = false;
@@ -290,7 +306,7 @@ function _gmlvm_parse_primary(_tokens, _pos) {
         var _body = _br[0];
         _pos = _br[1];
         
-        var _func_node = new gmlvm_function_node(_name, _params, _body, _is_constructor, _inherit, _inherit_args, _line, _col);
+        var _func_node = new gmlvm_function_node(_name, _params, _param_defaults, _body, _is_constructor, _inherit, _inherit_args, _line, _col);
         
         // function expressions dont get postfix handling (they cant be called immediately)
         return [_func_node, _pos];
@@ -680,47 +696,47 @@ function gmlvm_parse_statement(_tokens, _pos) {
     }
 	
 	// var declaration
-    if (_t.type == "keyword" && _t.value == "var") {
-        var _line = _t.line;
-        var _col = _t.column;
-        _pos++;
+	if (_t.type == "keyword" && _t.value == "var") {
+	    var _line = _t.line;
+	    var _col = _t.column;
+	    _pos++;
+    
+	    var _stmts = [];
+    
+	    while (true) {
+	        var _name_tok = _gmlvm_tok(_tokens, _pos);
+	        if (_name_tok.type != "identifier") break;
+	        var _var_name = _name_tok.value;
+	        _pos++;
         
-        var _stmts = [];
+	        var _init = undefined;
+	        var _eq = _gmlvm_tok(_tokens, _pos);
+	        if (_eq.type == "operator" && _eq.value == "=") {
+	            _pos++;
+	            var _er = gmlvm_parse_expression(_tokens, _pos);
+	            _init = _er[0];
+	            _pos = _er[1];
+	        }
         
-        while (true) {
-            var _name_tok = _gmlvm_tok(_tokens, _pos);
-            if (_name_tok.type != "identifier") break;
-            var _var_name = _name_tok.value;
-            _pos++;
-            
-            var _init = undefined;
-            var _eq = _gmlvm_tok(_tokens, _pos);
-            if (_eq.type == "operator" && _eq.value == "=") {
-                _pos++;
-                var _er = gmlvm_parse_expression(_tokens, _pos);
-                _init = _er[0];
-                _pos = _er[1];
-            }
-            
-            var _var_node = new gmlvm_var_node(_var_name, _line, _col);
-            array_push(_stmts, new gmlvm_assign_node(_var_node, _init, _line, _col));
-            
-            var _comma = _gmlvm_tok(_tokens, _pos);
-            if (_comma.type == "separator" && _comma.value == ",") {
-                _pos++;
-            } else {
-                break;
-            }
-        }
+	        var _var_node = new gmlvm_var_node(_var_name, _line, _col);
+	        array_push(_stmts, new gmlvm_assign_node(_var_node, _init, _line, _col));
         
-        var _sc = _gmlvm_tok(_tokens, _pos);
-        if (_sc.type == "separator" && _sc.value == ";") _pos++;
-        
-        if (array_length(_stmts) == 1) {
-            return [_stmts[0], _pos];
-        }
-        return [new gmlvm_block_node(_stmts, _line, _col), _pos];
-    }
+	        var _comma = _gmlvm_tok(_tokens, _pos);
+	        if (_comma.type == "separator" && _comma.value == ",") {
+	            _pos++;
+	        } else {
+	            break;
+	        }
+	    }
+    
+	    var _sc = _gmlvm_tok(_tokens, _pos);
+	    if (_sc.type == "separator" && _sc.value == ";") _pos++;
+    
+	    if (array_length(_stmts) == 1) {
+	        return [_stmts[0], _pos];
+	    }
+	    return [new gmlvm_block_node(_stmts, _line, _col), _pos];
+	}
 
     // if statement
     if (_t.type == "keyword" && _t.value == "if") {

@@ -799,16 +799,66 @@ return Values.B;
 ");
 show_debug_message("87. Enum explicit values: " + string(_test87) + " (expected 20)");
 
+show_debug_message("=== Var Multiple Declarations ===");
+var _test88 = gmlvm_run(@"
+var a = 1, b = 2, c = 3;
+return a + b + c;
+");
+show_debug_message("88. Var multiple: " + string(_test88) + " (expected 6)");
 
+show_debug_message("=== Optional Arguments ===");
+var _test89 = gmlvm_run(@"
+function greet(name = 'Guest') {
+    return 'Hello, ' + name;
+}
+return greet();
+");
+show_debug_message("90. Optional arg default: " + string(_test89) + " (expected Hello, Guest)");
 
+var _test90 = gmlvm_run(@"
+function greet(name = 'Guest') {
+    return 'Hello, ' + name;
+}
+return greet('Alice');
+");
+show_debug_message("91. Optional arg override: " + string(_test90) + " (expected Hello, Alice)");
 
+var _test91 = gmlvm_run(@"
+function add(a, b = 10) {
+    return a + b;
+}
+return add(5);
+");
+show_debug_message("92. Optional arg second param: " + string(_test91) + " (expected 15)");
 
+show_debug_message("=== Template Strings ===");
+var _test93 = gmlvm_run(@"
+var name = 'Alice';
+return $'Hello {name}!';
+");
+show_debug_message("93. Template string: " + string(_test93) + " (expected Hello Alice!)");
 
+var _test94 = gmlvm_run(@"
+var x = 10;
+var y = 20;
+return $'{x} + {y} = {x + y}';
+");
+show_debug_message("94. Template string expressions: " + string(_test94) + " (expected 10 + 20 = 30)");
 
+show_debug_message("=== Multi-line Strings ===");
+var _test95 = gmlvm_run(@"
+var text = @'Line 1
+Line 2
+Line 3';
+return text;
+");
+show_debug_message("95. Multi-line string: " + string_replace_all(string(_test95), "\n", "\\n") + " (expected Line 1\\nLine 2\\nLine 3)");
 
-
-
-
+var _test96 = gmlvm_run(@"
+var text = @'He said ''Hello'' to me';
+return text;
+");
+show_debug_message("96. Multi-line with quotes: " + string(_test96) + " (expected He said \"Hello\" to me)");
 
 
 

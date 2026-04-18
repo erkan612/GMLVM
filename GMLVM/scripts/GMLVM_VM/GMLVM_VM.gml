@@ -268,15 +268,21 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     _func.__gmlvm_statics = _func_statics;
     
     for (var _i = 0; _i < array_length(_params); _i++) {
-        var _param_name = _params[_i];
-        var _value = undefined;
-        if (_i < array_length(_args)) {
-            _value = _args[_i];
-        } else {
-            _value = 0;
-        }
-        _func_ctx.locals[$ _param_name] = _value;
-    }
+	    var _param_name = _params[_i];
+	    var _value = undefined;
+	    if (_i < array_length(_args)) {
+	        _value = _args[_i];
+	    } else {
+	        // Check for default value
+	        if (struct_exists(_func, "__gmlvm_param_defaults") && struct_exists(_func.__gmlvm_param_defaults, _param_name)) {
+	            var _default_node = _func.__gmlvm_param_defaults[$ _param_name];
+	            _value = gmlvm_vm_evaluate(_default_node, _caller_ctx);
+	        } else {
+	            _value = 0;
+	        }
+	    }
+	    _func_ctx.locals[$ _param_name] = _value;
+	}
     
     _func_ctx.locals[$ "argument"] = _args;
     _func_ctx.locals[$ "argument_count"] = array_length(_args);
