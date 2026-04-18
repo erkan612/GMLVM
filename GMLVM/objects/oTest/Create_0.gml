@@ -635,6 +635,63 @@ return x;
 ");
 show_debug_message("71. Nullish assign defined: " + string(_test71) + " (expected 50)");
 
+show_debug_message("=== With Statement on Instances ===");
+wakeup = string(Object2);
+
+var _test72 = gmlvm_run(@"
+var inst = instance_create_depth(0, 0, 0, Object2);
+inst.value = 42;
+
+var result = 0;
+with (inst) {
+    result = value * 2;
+}
+
+instance_destroy(inst);
+return result;
+");
+show_debug_message("72. With on instance: " + string(_test72) + " (expected 84)");
+
+var _test73 = gmlvm_run(@"
+// Create an instance first!
+var inst = instance_create_depth(0, 0, 0, Object2);
+
+var result = '';
+with (Object2) {
+    result += 'A';
+}
+
+instance_destroy(inst);
+return result;
+");
+show_debug_message("73. With on object: " + string(_test73) + " (expected A)");
+
+var _test74 = gmlvm_run(@"
+var inst1 = instance_create_depth(0, 0, 0, Object2);
+var inst2 = instance_create_depth(0, 0, 0, Object2);
+var inst3 = instance_create_depth(0, 0, 0, Object2);
+
+var count = 0;
+with (Object2) {
+    count++;
+}
+return count;
+");
+show_debug_message("74. With on object (multiple): " + string(_test74) + " (expected 3)");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

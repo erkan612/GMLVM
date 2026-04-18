@@ -21,6 +21,7 @@
   },
   "name":"GMLVM",
   "resources":[
+    {"id":{"name":"Object2","path":"objects/Object2/Object2.yy",},},
     {"id":{"name":"oTest","path":"objects/oTest/oTest.yy",},},
     {"id":{"name":"rTest","path":"rooms/rTest/rTest.yy",},},
     {"id":{"name":"GMLVM_AST","path":"scripts/GMLVM_AST/GMLVM_AST.yy",},},

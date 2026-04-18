@@ -722,35 +722,67 @@ function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
     column = _column;
     
     Execute = function(_ctx) {
-        var _target_val = gmlvm_vm_evaluate(target, _ctx);
-        var _result = undefined;
-        
-        if (_target_val == -3) { // all
-            with (all) {
-                _result = gmlvm_vm_evaluate(body, _ctx);
-            }
-        } else if (is_struct(_target_val)) {
-            var _old_self = _ctx.GetSelf();
-            _ctx.self_inst = _target_val;
-            _result = gmlvm_vm_evaluate(body, _ctx);
-            _ctx.self_inst = _old_self;
-        } else if (instance_exists(_target_val)) {
-            var _old_self = _ctx.GetSelf();
-            _ctx.self_inst = _target_val;
-            _result = gmlvm_vm_evaluate(body, _ctx);
-            _ctx.self_inst = _old_self;
-        }
-        
-        if (is_struct(_result) && struct_exists(_result, "type")) {
-            if (_result.type == "break") {
-                return undefined;
-            } else if (_result.type == "continue") {
-                return undefined;
-            }
-        }
-        
-        return _result;
-    };
+	    var _target_val = gmlvm_vm_evaluate(target, _ctx);
+	    var _result = undefined;
+	    var _old_self = _ctx.GetSelf();
+	    var _old_other = _ctx.GetOther();
+    
+	    if (_target_val == -3) { // all
+	        with (all) {
+	            _ctx.self_inst = id;
+	            _ctx.other_inst = _old_self;
+	            _result = gmlvm_vm_evaluate(body, _ctx);
+	        }
+	    }
+	    else if (is_real(_target_val) && object_exists(_target_val)) {
+	        var _inst_count = instance_number(_target_val);
+	        for (var _i = 0; _i < _inst_count; _i++) {
+	            var _inst = instance_find(_target_val, _i);
+	            if (instance_exists(_inst)) {
+	                _ctx.self_inst = _inst;
+	                _ctx.other_inst = _old_self;
+	                var _inst_result = gmlvm_vm_evaluate(body, _ctx);
+                
+	                if (is_struct(_inst_result) && struct_exists(_inst_result, "type")) {
+	                    if (_inst_result.type == "break") {
+	                        break;
+	                    } else if (_inst_result.type == "continue") {
+	                        continue;
+	                    } else if (_inst_result.type == "return") {
+	                        _ctx.self_inst = _old_self;
+	                        _ctx.other_inst = _old_other;
+	                        return _inst_result.value;
+	                    }
+	                } else {
+	                    _result = _inst_result;
+	                }
+	            }
+	        }
+	    }
+	    else if (instance_exists(_target_val)) {
+	        _ctx.self_inst = _target_val;
+	        _ctx.other_inst = _old_self;
+	        _result = gmlvm_vm_evaluate(body, _ctx);
+	    }
+	    else if (is_struct(_target_val)) {
+	        _ctx.self_inst = _target_val;
+	        _ctx.other_inst = _old_self;
+	        _result = gmlvm_vm_evaluate(body, _ctx);
+	    }
+    
+	    _ctx.self_inst = _old_self;
+	    _ctx.other_inst = _old_other;
+    
+	    if (is_struct(_result) && struct_exists(_result, "type")) {
+	        if (_result.type == "return") {
+	            return _result.value;
+	        } else if (_result.type == "break" || _result.type == "continue") {
+	            return undefined;
+	        }
+	    }
+    
+	    return _result;
+	};
 }
 
 function gmlvm_typeof_node(_expr, _line = -1, _column = -1) constructor {
