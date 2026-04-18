@@ -189,42 +189,46 @@ function gmlvm_compound_assign_node(_target, _op, _value, _line = -1, _column = 
     column = _column;
     
     Execute = function(_ctx) {
-        var _current = undefined;
-        
-        if (target.type == "var") {
-            _current = _ctx.GetVar(target.name);
-        } else if (target.type == "access") {
-            _current = gmlvm_vm_get_access(target, _ctx);
-        }
-        
-        // Handle undefined
-        if (_current == undefined) {
-            _current = 0;
-        }
-        
-        var _r = gmlvm_vm_evaluate(value, _ctx);
-        if (_r == undefined) {
-            _r = 0;
-        }
-        
-        var _new = _current;
-        
-        switch (op) {
-            case "+=": _new = _current + _r; break;
-            case "-=": _new = _current - _r; break;
-            case "*=": _new = _current * _r; break;
-            case "/=": _new = _current / _r; break;
-            case "%=": _new = _current % _r; break;
-        }
-        
-        if (target.type == "var") {
-            _ctx.SetVar(target.name, _new);
-        } else if (target.type == "access") {
-            gmlvm_vm_set_access(target, _new, _ctx);
-        }
-        
-        return _new;
-    };
+	    var _current = undefined;
+    
+	    if (target.type == "var") {
+	        _current = _ctx.GetVar(target.name);
+	    } else if (target.type == "access") {
+	        _current = gmlvm_vm_get_access(target, _ctx);
+	    }
+    
+	    if (_current == undefined) {
+	        _current = 0;
+	    }
+    
+	    var _r = gmlvm_vm_evaluate(value, _ctx);
+	    if (_r == undefined) {
+	        _r = 0;
+	    }
+    
+	    var _new = _current;
+    
+	    switch (op) {
+	        case "+=": _new = _current + _r; break;
+	        case "-=": _new = _current - _r; break;
+	        case "*=": _new = _current * _r; break;
+	        case "/=": _new = _current / _r; break;
+	        case "%=": _new = _current % _r; break;
+	        case "<<=": _new = _current << _r; break;
+	        case ">>=": _new = _current >> _r; break;
+	        case "&=": _new = _current & _r; break;
+	        case "|=": _new = _current | _r; break;
+	        case "^=": _new = _current ^ _r; break;
+	    }
+    
+	    if (target.type == "var") {
+	        _ctx.SetVar(target.name, _new);
+	    } else if (target.type == "access") {
+	        gmlvm_vm_set_access(target, _new, _ctx);
+	    }
+    
+	    return _new;
+	};
 }
 
 function gmlvm_if_node(_cond, _then_block, _else_block) constructor {
@@ -688,6 +692,63 @@ function gmlvm_do_until_node(_cond, _body, _line = -1, _column = -1) constructor
                 }
             }
         } until (gmlvm_vm_evaluate(cond, _ctx));
+        
+        return _result;
+    };
+}
+
+function gmlvm_ternary_node(_cond, _true_expr, _false_expr, _line = -1, _column = -1) constructor {
+    type       = "ternary";
+    cond       = _cond;
+    true_expr  = _true_expr;
+    false_expr = _false_expr;
+    line       = _line;
+    column     = _column;
+    
+    static Execute = function(_ctx) {
+        var _c = gmlvm_vm_evaluate(cond, _ctx);
+        if (_c) {
+            return gmlvm_vm_evaluate(true_expr, _ctx);
+        } else {
+            return gmlvm_vm_evaluate(false_expr, _ctx);
+        }
+    };
+}
+
+function gmlvm_with_node(_target, _body, _line = -1, _column = -1) constructor {
+    type   = "with";
+    target = _target;
+    body   = _body;
+    line   = _line;
+    column = _column;
+    
+    Execute = function(_ctx) {
+        var _target_val = gmlvm_vm_evaluate(target, _ctx);
+        var _result = undefined;
+        
+        if (_target_val == -3) { // all
+            with (all) {
+                _result = gmlvm_vm_evaluate(body, _ctx);
+            }
+        } else if (is_struct(_target_val)) {
+            var _old_self = _ctx.GetSelf();
+            _ctx.self_inst = _target_val;
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            _ctx.self_inst = _old_self;
+        } else if (instance_exists(_target_val)) {
+            var _old_self = _ctx.GetSelf();
+            _ctx.self_inst = _target_val;
+            _result = gmlvm_vm_evaluate(body, _ctx);
+            _ctx.self_inst = _old_self;
+        }
+        
+        if (is_struct(_result) && struct_exists(_result, "type")) {
+            if (_result.type == "break") {
+                return undefined;
+            } else if (_result.type == "continue") {
+                return undefined;
+            }
+        }
         
         return _result;
     };

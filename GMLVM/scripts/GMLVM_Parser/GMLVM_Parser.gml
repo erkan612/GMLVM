@@ -362,19 +362,40 @@ function gmlvm_parse_expression(_tokens, _start_index) {
     var _left = _res[0];
     var _pos  = _res[1];
 
-    // Climb infix operators as long as their binding power >= min_bp.
-    // Outer loop uses min_bp = 0 so all infix ops are candidates.
+    // Climb infix operators
     while (true) {
         var _t  = _gmlvm_tok(_tokens, _pos);
         var _bp = _gmlvm_infix_bp(_t.value);
-        if (_bp[0] < 0) break;       // not an infix op we handle
+        if (_bp[0] < 0) break;
         var _l_bp = _bp[0];
-        var _r_bp = _bp[1];          // right operand min binding power
-        _pos++;                      // consume operator token
+        var _r_bp = _bp[1];
+        _pos++;
         var _rr    = gmlvm_parse_expression_bp(_tokens, _pos, _r_bp);
         var _right = _rr[0];
         _pos       = _rr[1];
         _left      = new gmlvm_binary_op_node(_t.value, _left, _right);
+    }
+    
+    // Handle ternary operator
+    var _t = _gmlvm_tok(_tokens, _pos);
+    if (_t.type == "operator" && _t.value == "?") {
+        _pos++;
+        var _true_res = gmlvm_parse_expression(_tokens, _pos);
+        var _true_expr = _true_res[0];
+        _pos = _true_res[1];
+        
+        var _colon = _gmlvm_tok(_tokens, _pos);
+        if (!(_colon.type == "operator" && _colon.value == ":")) {
+            gmlvm_warning("parse_error", "Expected ':' in ternary expression", _colon.line, _colon.column);
+            return [_left, _pos];
+        }
+        _pos++;
+        
+        var _false_res = gmlvm_parse_expression(_tokens, _pos);
+        var _false_expr = _false_res[0];
+        _pos = _false_res[1];
+        
+        _left = new gmlvm_ternary_node(_left, _true_expr, _false_expr, _t.line, _t.column);
     }
 
     return [_left, _pos];
@@ -777,6 +798,31 @@ function gmlvm_parse_statement(_tokens, _pos) {
         
         return [new gmlvm_switch_node(_expr, _cases), _pos];
     }
+	
+	// with statement
+	if (_t.type == "keyword" && _t.value == "with") {
+	    var _line = _t.line;
+	    var _col = _t.column;
+	    _pos++;
+    
+	    var _open = _gmlvm_tok(_tokens, _pos);
+	    if (!(_open.type == "paren" && _open.value == "(")) {
+	        gmlvm_warning("parse_error", "Expected '(' after 'with'", _open.line, _open.column);
+	        return [undefined, _pos];
+	    }
+	    _pos++;
+    
+	    var _er = gmlvm_parse_expression(_tokens, _pos);
+	    var _target = _er[0]; _pos = _er[1];
+    
+	    var _close = _gmlvm_tok(_tokens, _pos);
+	    if (_close.type == "paren" && _close.value == ")") _pos++;
+    
+	    var _br = gmlvm_parse_statement(_tokens, _pos);
+	    var _body = _br[0]; _pos = _br[1];
+    
+	    return [new gmlvm_with_node(_target, _body, _line, _col), _pos];
+	}
 
     // return statement
     if (_t.type == "keyword" && _t.value == "return") {

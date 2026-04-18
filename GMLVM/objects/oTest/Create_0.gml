@@ -457,6 +457,44 @@ return sum;
 ");
 show_debug_message("46. Continue in do/until: " + string(_test46) + " (expected 9)");
 
+show_debug_message("=== Ternary Operator ===");
+var _test47 = gmlvm_run(@"
+var x = 10;
+return x > 5 ? 'big' : 'small';
+");
+show_debug_message("47. Ternary true: " + string(_test47) + " (expected big)");
+
+var _test48 = gmlvm_run(@"
+var x = 3;
+return x > 5 ? 'big' : 'small';
+");
+show_debug_message("48. Ternary false: " + string(_test48) + " (expected small)");
+
+show_debug_message("=== With Statement ===");
+var _test49 = gmlvm_run(@"
+var obj = { value: 10 };
+with (obj) {
+    value *= 2;
+}
+return obj.value;
+");
+show_debug_message("49. With struct: " + string(_test49) + " (expected 20)");
+
+show_debug_message("=== Compound Assignment ===");
+var _test50 = gmlvm_run(@"
+var arr = [5];
+arr[0] += 10;
+return arr[0];
+");
+show_debug_message("50. Array compound assign: " + string(_test50) + " (expected 15)");
+
+var _test51 = gmlvm_run(@"
+var obj = { val: 3 };
+obj.val *= 4;
+return obj.val;
+");
+show_debug_message("51. Struct compound assign: " + string(_test51) + " (expected 12)");
+
 
 
 
