@@ -170,6 +170,15 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
 //}
 
 function gmlvm_vm_call(_func, _args, _ctx) {
+    // Sandbox check
+    var _sandbox = global.__gmlvm_current_sandbox;
+    if (_sandbox != undefined) {
+        _sandbox.CheckTimeout();
+        if (is_real(_func)) {
+            _sandbox.CheckFunction(_func);
+        }
+    }
+    
     // check if its framework's custom GML function
     if (is_struct(_func) && struct_exists(_func, "__gmlvm_type") && _func.__gmlvm_type == "function") {
         return gmlvm_vm_call_gmlvm_function(_func, _args, _ctx);
@@ -236,6 +245,11 @@ function gmlvm_vm_call_ext(_func, _args) {
 }
 
 function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
+    var _sandbox = global.__gmlvm_current_sandbox;
+    if (_sandbox != undefined) {
+        _sandbox.CheckRecursionDepth();
+    }
+    
     var _body = _func.__gmlvm_body;
     var _params = _func.__gmlvm_params;
     var _self_inst = _func.__gmlvm_self;
@@ -247,7 +261,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	    _self_inst = {};
 	    _self_inst.gmlvm_constructor = _func;
     
-	    // First, evaluate all arguments that will be passed to this constructor
 	    var _evaluated_args = [];
 	    for (var _i = 0; _i < array_length(_args); _i++) {
 	        _evaluated_args[_i] = _args[_i];
@@ -261,8 +274,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	            var _parent_args = [];
             
 	            if (array_length(_inherit_args) > 0) {
-	                // Create a temporary context with the parameters bound
-	                // so that _inherit_args can reference parameter names
 	                var _temp_ctx = new gmlvm_vm_context(_self_inst, _caller_ctx.GetSelf());
 	                for (var _i = 0; _i < array_length(_params); _i++) {
 	                    var _param_name = _params[_i];
@@ -285,7 +296,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	            _parent_ctor.__gmlvm_is_constructor = _parent_was_constructor;
             
 	            if (is_struct(_parent_instance)) {
-	                // SAVE the constructor reference before copying!
 	                var _saved_constructor = _self_inst.gmlvm_constructor;
                 
 	                var _names = struct_get_names(_parent_instance);
@@ -294,7 +304,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
 	                    _self_inst[$ _n] = _parent_instance[$ _n];
 	                }
                 
-	                // RESTORE the correct constructor!
 	                _self_inst.gmlvm_constructor = _saved_constructor;
 	            }
 	        }
@@ -357,6 +366,10 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     }
     
     var _result = gmlvm_vm_evaluate(_body, _func_ctx);
+    
+    if (_sandbox != undefined) {
+        _sandbox.recursion_depth--;
+    }
     
     if (is_struct(_result) && struct_exists(_result, "type")) {
 	    if (_result.type == "return") {
