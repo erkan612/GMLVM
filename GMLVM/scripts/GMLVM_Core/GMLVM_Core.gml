@@ -50,8 +50,6 @@ function gmlvm_init() {
 	};
 	global.__gmlvm_warning_collector = new gmlvm_warning_collector();
 	global.__gmlvm_ast_cache = new gmlvm_cache();
-	global.__gmlvm_debugger = new gmlvm_debugger();
-	global.__gmlvm_current_sandbox = undefined;
 	global.__gmlvm_call_stack = [ ];
 	global.__gmlvm_error_formatter = gmlvm_error_formatter;
 }

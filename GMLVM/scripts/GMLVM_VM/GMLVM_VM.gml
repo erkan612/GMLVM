@@ -707,15 +707,6 @@ function gmlvm_vm_call(_func, _args, _ctx) {
         );
     }
     
-    // Sandbox check
-    var _sandbox = global.__gmlvm_current_sandbox;
-    if (_sandbox != undefined) {
-        _sandbox.CheckTimeout();
-        if (is_real(_func)) {
-            _sandbox.CheckFunction(_func);
-        }
-    }
-    
     // check if its framework's custom GML function
     if (is_struct(_func) && struct_exists(_func, "__gmlvm_type") && _func.__gmlvm_type == "function") {
         return gmlvm_vm_call_gmlvm_function(_func, _args, _ctx);
@@ -782,11 +773,6 @@ function gmlvm_vm_call_ext(_func, _args) {
 }
 
 function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
-    var _sandbox = global.__gmlvm_current_sandbox;
-    if (_sandbox != undefined) {
-        _sandbox.CheckRecursionDepth();
-    }
-    
     var _body = _func.__gmlvm_body;
     var _params = _func.__gmlvm_params;
     var _self_inst = _func.__gmlvm_self;
@@ -903,10 +889,6 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
     }
     
     var _result = gmlvm_vm_evaluate(_body, _func_ctx);
-    
-    if (_sandbox != undefined) {
-        _sandbox.recursion_depth--;
-    }
     
     if (is_struct(_result) && struct_exists(_result, "type")) {
 	    if (_result.type == "return") {

@@ -952,32 +952,12 @@ if (hp < 0) {
 }
 ");
 
-// Create a strict sandbox for simple calculations
-var sandbox = new gmlvm_sandbox();
-sandbox.PresetStrict();
-
-// This works - basic math
-var result1 = gmlvm_run_sandboxed(@"
-    var x = 10;
-    var y = 20;
-    return sqrt(x * x + y * y);
-", sandbox);
-show_debug_message("Result 1: " + string(result1)); // 22.36
-
-// This works - string operations
-var result2 = gmlvm_run_sandboxed(@"
-    var name = 'Alice';
-    return 'Hello, ' + name + '!';
-", sandbox);
-show_debug_message("Result 2: " + string(result2)); // Hello, Alice!
-
-// This THROWS an error - instance creation not allowed
-var result3 = gmlvm_run_sandboxed(@"
-    var inst = instance_create_depth(0, 0, 0, obj_enemy);
-    return inst;
-", sandbox);
-// Throws: "Sandbox: Function 'instance_create_depth' is not allowed"
-
-
+some_text = "incredible work";
+some_test = gmlvm_run(@"
+some_struct = {
+	some_func: function(_msg) { show_debug_message(_msg); }
+};
+some_struct.some_func(self.some_text);
+");
 
 

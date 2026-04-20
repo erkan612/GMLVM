@@ -303,11 +303,6 @@ function gmlvm_while_node(_cond, _body, _line = -1, _column = -1) constructor {
         var _result = undefined;
         
         while (gmlvm_vm_evaluate(cond, _ctx)) {
-			var _sandbox = global.__gmlvm_current_sandbox;
-			if (_sandbox != undefined) {
-			    _sandbox.CheckLoopIteration();
-			}
-			
             _result = gmlvm_vm_evaluate(body, _ctx);
             
             if (is_struct(_result) && struct_exists(_result, "type")) {
@@ -345,11 +340,6 @@ function gmlvm_for_node(_init, _cond, _step, _body, _line = -1, _column = -1) co
         }
         
         while (true) {
-			var _sandbox = global.__gmlvm_current_sandbox;
-			if (_sandbox != undefined) {
-			    _sandbox.CheckLoopIteration();
-			}
-			
             if (cond != undefined) {
                 if (!gmlvm_vm_evaluate(cond, _ctx)) {
                     break;
@@ -390,11 +380,6 @@ function gmlvm_repeat_node(_count, _body) constructor {
         var _c = gmlvm_vm_evaluate(count, _ctx);
         
         for (var _i = 0; _i < _c; _i++) {
-			var _sandbox = global.__gmlvm_current_sandbox;
-			if (_sandbox != undefined) {
-			    _sandbox.CheckLoopIteration();
-			}
-			
             _result = gmlvm_vm_evaluate(body, _ctx);
             
             if (is_struct(_result) && struct_exists(_result, "type")) {
@@ -756,11 +741,6 @@ function gmlvm_do_until_node(_cond, _body, _line = -1, _column = -1) constructor
         var _result = undefined;
         
         do {
-			var _sandbox = global.__gmlvm_current_sandbox;
-			if (_sandbox != undefined) {
-			    _sandbox.CheckLoopIteration();
-			}
-			
             _result = gmlvm_vm_evaluate(body, _ctx);
             
             if (is_struct(_result) && struct_exists(_result, "type")) {
