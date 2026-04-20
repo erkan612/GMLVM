@@ -163,7 +163,7 @@ if (hp <= 0) {
 }
 ```
 
-## 🔧 Advanced Examples
+## Advanced Examples
 
 ### Constructors and Inheritance
 
