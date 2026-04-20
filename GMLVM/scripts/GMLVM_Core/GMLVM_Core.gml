@@ -27,7 +27,7 @@
 *   			        ██║   ██║██║╚██╔╝██║██║    ╚██╗ ██╔╝██║╚██╔╝██║		                 *
 *   			        ╚██████╔╝██║ ╚═╝ ██║███████╗╚████╔╝ ██║ ╚═╝ ██║		                 *
 *   			         ╚═════╝ ╚═╝     ╚═╝╚══════╝ ╚═══╝  ╚═╝     ╚═╝		                 *
-*   						 GameMaker Immediate Mode UI Library	                         *
+*   						       GameMaker Virtual Machine								 *
 *   						           Version 1.0.0										 *
 *   																                         *
 *   						            by erkan612					                         *
@@ -990,20 +990,6 @@ function gmlvm_run(_code, _self = self, _other = other) {
             show_debug_message(_msg);
             global.__gmlvm_last_error = _clean_err;
         }
-        return undefined;
-    }
-}
-
-function gmlvm_run_file(_filename, _self = self, _other = other) {
-    var _code = file_read(_filename);
-    global.__gmlvm_last_source = _code;
-    global.__gmlvm_last_source_name = _filename;
-    
-    try {
-        return gmlvm_run(_code, _self, _other);
-    } catch (_err) {
-        var _formatter = global.__gmlvm_error_formatter;
-        var _msg = _formatter.FormatError(_err, _code, _filename);
         return undefined;
     }
 }
