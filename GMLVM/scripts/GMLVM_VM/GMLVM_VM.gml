@@ -1,92 +1,440 @@
+//function gmlvm_vm_get_access(_node, _ctx) {
+//    var _target = gmlvm_vm_evaluate(_node.target, _ctx);
+//    var _index = _node.index;
+//    var _kind = _node.kind;
+//    
+//    // Dot access
+//    if (_kind == "dot") {
+//        var _prop = _index.value;
+//		
+//		if (_target == global) {
+//			if (variable_global_exists(_prop)) {
+//				return variable_global_get(_prop);
+//			}
+//			else {
+//				return undefined;
+//			}
+//		}
+//		
+//        if (is_struct(_target)) {
+//            return _target[$ _prop];
+//        } else if (instance_exists(_target)) {
+//            if (_prop == "id") return _target;
+//            if (_prop == "x") return _target.x;
+//            if (_prop == "y") return _target.y;
+//            if (variable_instance_exists(_target, _prop)) {
+//                return variable_instance_get(_target, _prop);
+//            }
+//        }
+//        return undefined;
+//    }
+//    
+//    // Bracket and accessor access
+//    var _idx = gmlvm_vm_evaluate(_index, _ctx);
+//    
+//    // Array accessor [@]
+//    if (_kind == "[@") {
+//        if (is_array(_target)) {
+//            return _target[_idx];
+//        }
+//        return undefined;
+//    }
+//    
+//    // Struct accessor [$]
+//    if (_kind == "[$") {
+//        if (is_struct(_target)) {
+//            return _target[$ _idx];
+//        }
+//        return undefined;
+//    }
+//    
+//    // Map accessor [?]
+//	if (_kind == "[?") {
+//	    return ds_map_find_value(_target, _idx);
+//	}
+//
+//	// List accessor [|]
+//	if (_kind == "[|") {
+//	    return ds_list_find_value(_target, _idx);
+//	}
+//    
+//    // Grid accessor [#]
+//    if (_kind == "[#") {
+//        // Grid access is typically 2D: grid[# x, y]
+//        if (is_array(_idx)) {
+//            var _x = _idx[0];
+//            var _y = _idx[1];
+//            if (ds_exists(_target, ds_type_grid)) {
+//                return ds_grid_get(_target, _x, _y);
+//            }
+//        }
+//        return undefined;
+//    }
+//    
+//    // Regular bracket - guess type
+//    if (is_array(_target)) {
+//        return _target[_idx];
+//    } else if (is_struct(_target)) {
+//        return _target[$ _idx];
+//    } else if (ds_exists(_target, ds_type_map)) {
+//        return ds_map_find_value(_target, _idx);
+//    } else if (instance_exists(_target)) {
+//        var _prop = string(_idx);
+//        if (variable_instance_exists(_target, _prop)) {
+//            return variable_instance_get(_target, _prop);
+//        }
+//    }
+//    
+//    return undefined;
+//}
+
 function gmlvm_vm_get_access(_node, _ctx) {
     var _target = gmlvm_vm_evaluate(_node.target, _ctx);
     var _index = _node.index;
     var _kind = _node.kind;
     
-    // Dot access
     if (_kind == "dot") {
         var _prop = _index.value;
-		
-		if (_target == global) {
-			if (variable_global_exists(_prop)) {
-				return variable_global_get(_prop);
-			}
-			else {
-				return undefined;
-			}
-		}
-		
+        
+        if (_target == global) {
+            if (variable_global_exists(_prop)) {
+                return variable_global_get(_prop);
+            }
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Global variable '" + _prop + "' not defined",
+                _node.line,
+                _node.column
+            );
+        }
+        
         if (is_struct(_target)) {
-            return _target[$ _prop];
-        } else if (instance_exists(_target)) {
+            if (struct_exists(_target, _prop)) {
+                return _target[$ _prop];
+            }
+            
+            if (_prop == "id" && struct_exists(_target, "id")) {
+                return _target.id;
+            }
+            if (_prop == "x" && struct_exists(_target, "x")) {
+                return _target.x;
+            }
+            if (_prop == "y" && struct_exists(_target, "y")) {
+                return _target.y;
+            }
+            
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Property '" + _prop + "' does not exist on struct",
+                _node.line,
+                _node.column
+            );
+        }
+        
+        if (instance_exists(_target)) {
             if (_prop == "id") return _target;
             if (_prop == "x") return _target.x;
             if (_prop == "y") return _target.y;
+            if (_prop == "object_index") return _target.object_index;
+            if (_prop == "sprite_index") return _target.sprite_index;
+            if (_prop == "image_index") return _target.image_index;
+            if (_prop == "image_alpha") return _target.image_alpha;
+            if (_prop == "image_angle") return _target.image_angle;
+            if (_prop == "image_blend") return _target.image_blend;
+            if (_prop == "image_xscale") return _target.image_xscale;
+            if (_prop == "image_yscale") return _target.image_yscale;
+            if (_prop == "mask_index") return _target.mask_index;
+            if (_prop == "solid") return _target.solid;
+            if (_prop == "persistent") return _target.persistent;
+            if (_prop == "depth") return _target.depth;
+            if (_prop == "layer") return _target.layer;
+            if (_prop == "alarm") return _target.alarm;
+            if (_prop == "direction") return _target.direction;
+            if (_prop == "speed") return _target.speed;
+            if (_prop == "friction") return _target.friction;
+            if (_prop == "gravity") return _target.gravity;
+            if (_prop == "gravity_direction") return _target.gravity_direction;
+            if (_prop == "hspeed") return _target.hspeed;
+            if (_prop == "vspeed") return _target.vspeed;
+            if (_prop == "bbox_left") return _target.bbox_left;
+            if (_prop == "bbox_right") return _target.bbox_right;
+            if (_prop == "bbox_top") return _target.bbox_top;
+            if (_prop == "bbox_bottom") return _target.bbox_bottom;
+            if (_prop == "path_index") return _target.path_index;
+            if (_prop == "path_position") return _target.path_position;
+            if (_prop == "path_speed") return _target.path_speed;
+            if (_prop == "path_scale") return _target.path_scale;
+            if (_prop == "path_orientation") return _target.path_orientation;
+            if (_prop == "path_endaction") return _target.path_endaction;
+            
             if (variable_instance_exists(_target, _prop)) {
                 return variable_instance_get(_target, _prop);
             }
+            
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Variable '" + _prop + "' not defined on instance",
+                _node.line,
+                _node.column
+            );
         }
-        return undefined;
+        
+        if (_target == undefined) {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Cannot access property '" + _prop + "' on undefined value",
+                _node.line,
+                _node.column
+            );
+        }
+        
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot access property '" + _prop + "' on " + typeof(_target),
+            _node.line,
+            _node.column
+        );
     }
     
-    // Bracket and accessor access
     var _idx = gmlvm_vm_evaluate(_index, _ctx);
     
-    // Array accessor [@]
     if (_kind == "[@") {
         if (is_array(_target)) {
+            if (_idx < 0 || _idx >= array_length(_target)) {
+                throw gmlvm_create_error(
+                    "runtime_error",
+                    "Array index " + string(_idx) + " out of bounds (length: " + string(array_length(_target)) + ")",
+                    _node.line,
+                    _node.column
+                );
+            }
             return _target[_idx];
         }
-        return undefined;
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use array accessor [@] on non-array value (got " + typeof(_target) + ")",
+            _node.line,
+            _node.column
+        );
     }
     
-    // Struct accessor [$]
     if (_kind == "[$") {
         if (is_struct(_target)) {
-            return _target[$ _idx];
+            var _key = string(_idx);
+            if (struct_exists(_target, _key)) {
+                return _target[$ _key];
+            }
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Struct key '" + _key + "' does not exist",
+                _node.line,
+                _node.column
+            );
         }
-        return undefined;
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use struct accessor [$] on non-struct value (got " + typeof(_target) + ")",
+            _node.line,
+            _node.column
+        );
     }
     
-    // Map accessor [?]
-	if (_kind == "[?") {
-	    return ds_map_find_value(_target, _idx);
-	}
-
-	// List accessor [|]
-	if (_kind == "[|") {
-	    return ds_list_find_value(_target, _idx);
-	}
+    if (_kind == "[?") {
+        if (ds_exists(_target, ds_type_map)) {
+            if (!ds_map_exists(_target, _idx)) {
+                return undefined;
+            }
+            return ds_map_find_value(_target, _idx);
+        }
+        if (is_real(_target)) {
+            if (ds_exists(_target, ds_type_map)) {
+                if (!ds_map_exists(_target, _idx)) {
+                    return undefined;
+                }
+                return ds_map_find_value(_target, _idx);
+            }
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use map accessor [?] on non-map value",
+            _node.line,
+            _node.column
+        );
+    }
     
-    // Grid accessor [#]
+    if (_kind == "[|") {
+        if (ds_exists(_target, ds_type_list)) {
+            if (_idx < 0 || _idx >= ds_list_size(_target)) {
+                throw gmlvm_create_error(
+                    "runtime_error",
+                    "List index " + string(_idx) + " out of bounds (size: " + string(ds_list_size(_target)) + ")",
+                    _node.line,
+                    _node.column
+                );
+            }
+            return ds_list_find_value(_target, _idx);
+        }
+        if (is_real(_target)) {
+            if (ds_exists(_target, ds_type_list)) {
+                if (_idx < 0 || _idx >= ds_list_size(_target)) {
+                    throw gmlvm_create_error(
+                        "runtime_error",
+                        "List index " + string(_idx) + " out of bounds",
+                        _node.line,
+                        _node.column
+                    );
+                }
+                return ds_list_find_value(_target, _idx);
+            }
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use list accessor [|] on non-list value",
+            _node.line,
+            _node.column
+        );
+    }
+    
     if (_kind == "[#") {
-        // Grid access is typically 2D: grid[# x, y]
         if (is_array(_idx)) {
             var _x = _idx[0];
             var _y = _idx[1];
             if (ds_exists(_target, ds_type_grid)) {
+                if (_x < 0 || _x >= ds_grid_width(_target) || _y < 0 || _y >= ds_grid_height(_target)) {
+                    throw gmlvm_create_error(
+                        "runtime_error",
+                        "Grid index (" + string(_x) + ", " + string(_y) + ") out of bounds",
+                        _node.line,
+                        _node.column
+                    );
+                }
                 return ds_grid_get(_target, _x, _y);
             }
         }
-        return undefined;
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use grid accessor [#] - invalid grid or coordinates",
+            _node.line,
+            _node.column
+        );
     }
     
-    // Regular bracket - guess type
     if (is_array(_target)) {
+        if (_idx < 0 || _idx >= array_length(_target)) {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Array index " + string(_idx) + " out of bounds (length: " + string(array_length(_target)) + ")",
+                _node.line,
+                _node.column
+            );
+        }
         return _target[_idx];
-    } else if (is_struct(_target)) {
-        return _target[$ _idx];
-    } else if (ds_exists(_target, ds_type_map)) {
+    }
+    
+    if (is_struct(_target)) {
+        var _key = string(_idx);
+        if (struct_exists(_target, _key)) {
+            return _target[$ _key];
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Struct key '" + _key + "' does not exist",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    if (ds_exists(_target, ds_type_map)) {
+        if (!ds_map_exists(_target, _idx)) {
+            return undefined;
+        }
         return ds_map_find_value(_target, _idx);
-    } else if (instance_exists(_target)) {
+    }
+    
+    if (ds_exists(_target, ds_type_list)) {
+        if (_idx < 0 || _idx >= ds_list_size(_target)) {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "List index " + string(_idx) + " out of bounds",
+                _node.line,
+                _node.column
+            );
+        }
+        return ds_list_find_value(_target, _idx);
+    }
+    
+    if (instance_exists(_target)) {
         var _prop = string(_idx);
         if (variable_instance_exists(_target, _prop)) {
             return variable_instance_get(_target, _prop);
         }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Variable '" + _prop + "' not defined on instance",
+            _node.line,
+            _node.column
+        );
     }
     
-    return undefined;
+    throw gmlvm_create_error(
+        "runtime_error",
+        "Cannot access index on value of type " + typeof(_target),
+        _node.line,
+        _node.column
+    );
 }
+
+//function gmlvm_vm_set_access(_node, _value, _ctx) {
+//    var _target = gmlvm_vm_evaluate(_node.target, _ctx);
+//    var _index = _node.index;
+//    var _kind = _node.kind;
+//    
+//    if (_kind == "dot") {
+//        var _prop = _index.value;
+//		
+//		if (_target == global) {
+//			variable_global_set(_prop, _value);
+//			return;
+//		}
+//		
+//        if (is_struct(_target)) {
+//            _target[$ _prop] = _value;
+//        } else if (instance_exists(_target)) {
+//            variable_instance_set(_target, _prop, _value);
+//        }
+//        return;
+//    }
+//    
+//    var _idx = gmlvm_vm_evaluate(_index, _ctx);
+//    
+//    if (_kind == "[@") {
+//        if (is_array(_target)) {
+//            _target[_idx] = _value;
+//        }
+//    } else if (_kind == "[$") {
+//        if (is_struct(_target)) {
+//            _target[$ _idx] = _value;
+//        }
+//    } else if (_kind == "[?") {
+//	    ds_map_set(_target, _idx, _value);
+//	} else if (_kind == "[|") {
+//	    ds_list_set(_target, _idx, _value);
+//	} else if (_kind == "[#") {
+//        if (is_array(_idx) && ds_exists(_target, ds_type_grid)) {
+//            ds_grid_set(_target, _idx[0], _idx[1], _value);
+//        }
+//    } else {
+//        if (is_array(_target)) {
+//            _target[_idx] = _value;
+//        } else if (is_struct(_target)) {
+//            _target[$ _idx] = _value;
+//        } else if (ds_exists(_target, ds_type_map)) {
+//            ds_map_set(_target, _idx, _value);
+//        } else if (instance_exists(_target)) {
+//            variable_instance_set(_target, string(_idx), _value);
+//        }
+//    }
+//}
 
 function gmlvm_vm_set_access(_node, _value, _ctx) {
     var _target = gmlvm_vm_evaluate(_node.target, _ctx);
@@ -95,49 +443,230 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
     
     if (_kind == "dot") {
         var _prop = _index.value;
-		
-		if (_target == global) {
-			variable_global_set(_prop, _value);
-			return;
-		}
-		
+        
+        if (_target == global) {
+            variable_global_set(_prop, _value);
+            return;
+        }
+        
         if (is_struct(_target)) {
             _target[$ _prop] = _value;
-        } else if (instance_exists(_target)) {
-            variable_instance_set(_target, _prop, _value);
+            return;
         }
-        return;
+        
+        if (instance_exists(_target)) {
+            if (_prop == "id" || _prop == "object_index" || 
+                _prop == "bbox_left" || _prop == "bbox_right" || 
+                _prop == "bbox_top" || _prop == "bbox_bottom") {
+                throw gmlvm_create_error(
+                    "runtime_error",
+                    "Cannot assign to read-only property '" + _prop + "'",
+                    _node.line,
+                    _node.column
+                );
+            }
+            
+            variable_instance_set(_target, _prop, _value);
+            return;
+        }
+        
+        if (_target == undefined) {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Cannot set property '" + _prop + "' on undefined value",
+                _node.line,
+                _node.column
+            );
+        }
+        
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot set property '" + _prop + "' on " + typeof(_target),
+            _node.line,
+            _node.column
+        );
     }
     
     var _idx = gmlvm_vm_evaluate(_index, _ctx);
     
     if (_kind == "[@") {
-        if (is_array(_target)) {
-            _target[_idx] = _value;
-        }
-    } else if (_kind == "[$") {
-        if (is_struct(_target)) {
-            _target[$ _idx] = _value;
-        }
-    } else if (_kind == "[?") {
-	    ds_map_set(_target, _idx, _value);
-	} else if (_kind == "[|") {
-	    ds_list_set(_target, _idx, _value);
-	} else if (_kind == "[#") {
-        if (is_array(_idx) && ds_exists(_target, ds_type_grid)) {
-            ds_grid_set(_target, _idx[0], _idx[1], _value);
-        }
-    } else {
-        if (is_array(_target)) {
-            _target[_idx] = _value;
-        } else if (is_struct(_target)) {
-            _target[$ _idx] = _value;
-        } else if (ds_exists(_target, ds_type_map)) {
-            ds_map_set(_target, _idx, _value);
-        } else if (instance_exists(_target)) {
-            variable_instance_set(_target, string(_idx), _value);
-        }
+	    if (is_array(_target)) {
+	        if (_idx >= array_length(_target)) {
+	            for (var _i = array_length(_target); _i <= _idx; _i++) {
+	                _target[_i] = undefined;
+	            }
+	        }
+	        _target[_idx] = _value;
+	        return;
+	    }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use array accessor [@] on non-array value (got " + typeof(_target) + ")",
+            _node.line,
+            _node.column
+        );
     }
+    
+    if (_kind == "[$") {
+        if (is_struct(_target)) {
+            var _key = string(_idx);
+            _target[$ _key] = _value;
+            return;
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use struct accessor [$] on non-struct value (got " + typeof(_target) + ")",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    if (_kind == "[?") {
+        if (ds_exists(_target, ds_type_map)) {
+            ds_map_set(_target, _idx, _value);
+            return;
+        }
+        if (is_real(_target)) {
+            if (ds_exists(_target, ds_type_map)) {
+                ds_map_set(_target, _idx, _value);
+                return;
+            }
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use map accessor [?] on non-map value",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    if (_kind == "[|") {
+        if (ds_exists(_target, ds_type_list)) {
+            if (_idx < 0 || _idx >= ds_list_size(_target)) {
+                throw gmlvm_create_error(
+                    "runtime_error",
+                    "List index " + string(_idx) + " out of bounds (size: " + string(ds_list_size(_target)) + ")",
+                    _node.line,
+                    _node.column
+                );
+            }
+            ds_list_set(_target, _idx, _value);
+            return;
+        }
+        if (is_real(_target)) {
+            if (ds_exists(_target, ds_type_list)) {
+                if (_idx < 0 || _idx >= ds_list_size(_target)) {
+                    throw gmlvm_create_error(
+                        "runtime_error",
+                        "List index " + string(_idx) + " out of bounds",
+                        _node.line,
+                        _node.column
+                    );
+                }
+                ds_list_set(_target, _idx, _value);
+                return;
+            }
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use list accessor [|] on non-list value",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    if (_kind == "[#") {
+        if (is_array(_idx) && array_length(_idx) >= 2) {
+            var _x = _idx[0];
+            var _y = _idx[1];
+            if (ds_exists(_target, ds_type_grid)) {
+                if (_x < 0 || _x >= ds_grid_width(_target) || _y < 0 || _y >= ds_grid_height(_target)) {
+                    throw gmlvm_create_error(
+                        "runtime_error",
+                        "Grid index (" + string(_x) + ", " + string(_y) + ") out of bounds",
+                        _node.line,
+                        _node.column
+                    );
+                }
+                ds_grid_set(_target, _x, _y, _value);
+                return;
+            }
+        }
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot use grid accessor [#] - invalid grid or coordinates",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    if (is_array(_target)) {
+	    if (_idx >= array_length(_target)) {
+	        for (var _i = array_length(_target); _i <= _idx; _i++) {
+	            _target[_i] = undefined;
+	        }
+	    }
+	    _target[_idx] = _value;
+        return;
+    }
+    
+    if (is_struct(_target)) {
+        var _key = string(_idx);
+        _target[$ _key] = _value;
+        return;
+    }
+    
+    if (ds_exists(_target, ds_type_map)) {
+        ds_map_set(_target, _idx, _value);
+        return;
+    }
+    
+    if (ds_exists(_target, ds_type_list)) {
+        if (_idx < 0 || _idx >= ds_list_size(_target)) {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "List index " + string(_idx) + " out of bounds",
+                _node.line,
+                _node.column
+            );
+        }
+        ds_list_set(_target, _idx, _value);
+        return;
+    }
+    
+    if (instance_exists(_target)) {
+        var _prop = string(_idx);
+        
+        if (_prop == "id" || _prop == "object_index" || 
+            _prop == "bbox_left" || _prop == "bbox_right" || 
+            _prop == "bbox_top" || _prop == "bbox_bottom") {
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Cannot assign to read-only property '" + _prop + "'",
+                _node.line,
+                _node.column
+            );
+        }
+        
+        variable_instance_set(_target, _prop, _value);
+        return;
+    }
+    
+    if (_target == undefined) {
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot set index on undefined value",
+            _node.line,
+            _node.column
+        );
+    }
+    
+    throw gmlvm_create_error(
+        "runtime_error",
+        "Cannot set index on value of type " + typeof(_target),
+        _node.line,
+        _node.column
+    );
 }
 
 //function gmlvm_vm_call(_func, _args, _ctx) {
@@ -170,6 +699,14 @@ function gmlvm_vm_set_access(_node, _value, _ctx) {
 //}
 
 function gmlvm_vm_call(_func, _args, _ctx) {
+    if (_func == undefined) {
+        throw gmlvm_create_error(
+            "runtime_error",
+            "Cannot call undefined value as function",
+            -1, -1
+        );
+    }
+    
     // Sandbox check
     var _sandbox = global.__gmlvm_current_sandbox;
     if (_sandbox != undefined) {
@@ -783,15 +1320,6 @@ function gmlvm_vm_evaluate(_node, _ctx) {
         return undefined;
     }
     
-    // debugger hook
-    var _dbg = global.__gmlvm_debugger;
-    _dbg.OnNodeEnter(_node);
-    
-    if (_dbg.ShouldBreak(_node)) { // TODO: implement the actual 'debugging'
-        show_debug_message("DEBUGGER: Break at line " + string(_dbg.current_line));
-		// TODO: ...
-    }
-    
     if (is_array(_node)) {
         var _result = undefined;
         for (var _i = 0; _i < array_length(_node); _i++) {
@@ -925,39 +1453,29 @@ function gmlvm_vm(_ast, _self = self, _other = other) {
         var _result;
         with (_self) {
             var _ctx = new gmlvm_vm_context(id, _other);
-            try {
-                _result = gmlvm_vm_evaluate(_ast, _ctx);
-                
-                if (is_struct(_result) && struct_exists(_result, "type")) {
-                    if (_result.type == "return") {
-                        _result = _result.value;
-                    } else if (_result.type == "exit") {
-                        _result = undefined;
-                    }
+            _result = gmlvm_vm_evaluate(_ast, _ctx);
+            
+            if (is_struct(_result) && struct_exists(_result, "type")) {
+                if (_result.type == "return") {
+                    _result = _result.value;
+                } else if (_result.type == "exit") {
+                    _result = undefined;
                 }
-            } catch (_err) {
-                show_debug_message("VM Runtime Error: " + string(_err));
-                _result = undefined;
             }
         }
         return _result;
     }
     
     var _ctx = new gmlvm_vm_context(_self, _other);
-    try {
-        var _result = gmlvm_vm_evaluate(_ast, _ctx);
-        
-        if (is_struct(_result) && struct_exists(_result, "type")) {
-            if (_result.type == "return") {
-                return _result.value;
-            } else if (_result.type == "exit") {
-                return undefined;
-            }
+    var _result = gmlvm_vm_evaluate(_ast, _ctx);
+    
+    if (is_struct(_result) && struct_exists(_result, "type")) {
+        if (_result.type == "return") {
+            return _result.value;
+        } else if (_result.type == "exit") {
+            return undefined;
         }
-        
-        return _result;
-    } catch (_err) {
-        show_debug_message("VM Runtime Error: " + string(_err));
-        return undefined;
     }
+    
+    return _result;
 }

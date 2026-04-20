@@ -30,8 +30,49 @@ function gmlvm_var_node(_name, _is_static = false, _line = -1, _column = -1) con
     Execute = function(_ctx) {
         if (name == "self") return _ctx.GetSelf();
         if (name == "other") return _ctx.GetOther();
-        if (name == "global") { return global; }
-        return _ctx.GetVar(name);
+        if (name == "global") return global;
+        if (name == "undefined") return undefined;
+    
+	    var _exists = false;
+	    var _val = undefined;
+    
+	    if (struct_exists(_ctx.locals, name)) {
+	        _exists = true;
+	        _val = _ctx.locals[$ name];
+	    } else if (struct_exists(_ctx.statics, name) || struct_exists(_ctx.static_names, name)) {
+	        _exists = true;
+	        _val = _ctx.statics[$ name];
+	    } else if (is_struct(_ctx.self_inst) && struct_exists(_ctx.self_inst, name)) {
+	        _exists = true;
+	        _val = _ctx.self_inst[$ name];
+	    } else if (instance_exists(_ctx.self_inst) && variable_instance_exists(_ctx.self_inst, name)) {
+	        _exists = true;
+	        _val = variable_instance_get(_ctx.self_inst, name);
+	    } else if (variable_global_exists(name)) {
+	        _exists = true;
+	        _val = variable_global_get(name);
+	    } else {
+	        var _builtin = gmlvm_vm_builtin(name);
+	        if (_builtin.found) {
+	            return _builtin.value;
+	        }
+	    }
+		
+		// this will be handled in the call node or assign node
+	    //if (!_exists) {
+	    //    throw gmlvm_create_error(
+	    //        "runtime_error",
+	    //        "Variable '" + name + "' is not defined",
+	    //        line,
+	    //        column
+	    //    );
+	    //}
+		
+		if (!_exists) {
+            return undefined;
+        }
+        
+        return _val;
     };
 }
 
@@ -482,11 +523,13 @@ function gmlvm_struct_node(_fields, _line = -1, _column = -1) constructor {
     };
 }
 
-function gmlvm_access_node(_target, _index, _kind) constructor {
+function gmlvm_access_node(_target, _index, _kind, _line = -1, _column = -1) constructor {
     type   = "access";
     target = _target;
     index  = _index;
     kind   = _kind;   // "bracket", "dot", "[@", "[$", "[#", "[?"
+    line   = _line;
+    column = _column;
     
     static Execute = function(_ctx) {
         return gmlvm_vm_get_access(self, _ctx);
@@ -502,6 +545,19 @@ function gmlvm_call_node(_callee, _args, _line = -1, _column = -1) constructor {
     
     static Execute = function(_ctx) {
         var _func = gmlvm_vm_evaluate(callee, _ctx);
+        
+        if (_func == undefined) {
+            var _name = "";
+            if (callee.type == "var") {
+                _name = callee.name;
+            }
+            throw gmlvm_create_error(
+                "runtime_error",
+                "Function '" + _name + "' is not defined",
+                line,
+                column
+            );
+        }
         
         var _arg_values = [];
         for (var _i = 0; _i < array_length(args); _i++) {

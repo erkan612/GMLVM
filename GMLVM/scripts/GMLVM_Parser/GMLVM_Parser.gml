@@ -428,27 +428,50 @@ function _gmlvm_parse_postfix(_tokens, _pos, _node) {
         }
         
         // function call:  expr ( args... )
-        if (_next.type == "paren" && _next.value == "(") {
-            var _args = [];
-            var _p = _pos + 1;
-            var _nt = _gmlvm_tok(_tokens, _p);
-            if (!(_nt.type == "paren" && _nt.value == ")")) {
-                while (true) {
-                    var _ar = gmlvm_parse_expression(_tokens, _p);
-                    array_push(_args, _ar[0]);
-                    _p = _ar[1];
-                    var _sep = _gmlvm_tok(_tokens, _p);
-                    if (_sep.type == "separator" && _sep.value == ",") {
-                        _p++;
-                    } else break;
-                }
-            }
-            var _rp = _gmlvm_tok(_tokens, _p);
-            if (_rp.type == "paren" && _rp.value == ")") _p++;
-            _node = new gmlvm_call_node(_node, _args);
-            _pos = _p;
-            continue;
-        }
+        //if (_next.type == "paren" && _next.value == "(") {
+        //    var _args = [];
+        //    var _p = _pos + 1;
+        //    var _nt = _gmlvm_tok(_tokens, _p);
+        //    if (!(_nt.type == "paren" && _nt.value == ")")) {
+        //        while (true) {
+        //            var _ar = gmlvm_parse_expression(_tokens, _p);
+        //            array_push(_args, _ar[0]);
+        //            _p = _ar[1];
+        //            var _sep = _gmlvm_tok(_tokens, _p);
+        //            if (_sep.type == "separator" && _sep.value == ",") {
+        //                _p++;
+        //            } else break;
+        //        }
+        //    }
+        //    var _rp = _gmlvm_tok(_tokens, _p);
+        //    if (_rp.type == "paren" && _rp.value == ")") _p++;
+        //    _node = new gmlvm_call_node(_node, _args);
+        //    _pos = _p;
+        //    continue;
+        //}
+		if (_next.type == "paren" && _next.value == "(") {
+		    var _line = _next.line;
+		    var _col = _next.column;
+		    var _args = [];
+		    var _p = _pos + 1;
+		    var _nt = _gmlvm_tok(_tokens, _p);
+		    if (!(_nt.type == "paren" && _nt.value == ")")) {
+		        while (true) {
+		            var _ar = gmlvm_parse_expression(_tokens, _p);
+		            array_push(_args, _ar[0]);
+		            _p = _ar[1];
+		            var _sep = _gmlvm_tok(_tokens, _p);
+		            if (_sep.type == "separator" && _sep.value == ",") {
+		                _p++;
+		            } else break;
+		        }
+		    }
+		    var _rp = _gmlvm_tok(_tokens, _p);
+		    if (_rp.type == "paren" && _rp.value == ")") _p++;
+		    _node = new gmlvm_call_node(_node, _args, _line, _col);
+		    _pos = _p;
+		    continue;
+		}
         
         // Regular bracket access: expr [ index ]
         if (_next.type == "bracket" && _next.value == "[") {
@@ -1223,4 +1246,10 @@ function gmlvm_parse_cached(_code) {
     global.__gmlvm_ast_cache.Set(_code, _ast);
     
     return _ast;
+}
+
+function gmlvm_parse_only(_code) {
+    var _processed = gmlvm_preprocess(_code);
+    var _tokens = gmlvm_tokenize(_processed);
+    return gmlvm_parse(_tokens);
 }

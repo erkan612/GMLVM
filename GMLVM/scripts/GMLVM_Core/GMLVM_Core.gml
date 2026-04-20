@@ -52,6 +52,288 @@ function gmlvm_init() {
 	global.__gmlvm_ast_cache = new gmlvm_cache();
 	global.__gmlvm_debugger = new gmlvm_debugger();
 	global.__gmlvm_current_sandbox = undefined;
+	global.__gmlvm_call_stack = [ ];
+	global.__gmlvm_error_formatter = gmlvm_error_formatter;
+}
+
+function gmlvm_push_call_stack(_name, _line) {
+    array_push(global.__gmlvm_call_stack, {
+        name: _name,
+        line: _line
+    });
+}
+
+function gmlvm_pop_call_stack() {
+    if (array_length(global.__gmlvm_call_stack) > 0) {
+        array_pop(global.__gmlvm_call_stack);
+    }
+}
+
+function gmlvm_create_error(_type, _message, _line, _column) {
+    return {
+        type: _type,
+        message: _message,
+        line: _line,
+        column: _column,
+        source: "",
+        source_name: "<script>",
+        stack_trace: [],
+        
+        toString: function() {
+		    var _output = "";
+		    var _box_width = 68;
+    
+		    // top border
+		    _output += "╔" + string_repeat("═", _box_width - 2) + "╗\n";
+    
+		    // header
+		    var _header = "  GMLVM " + ((type == "parse_error") ? "Parse Error" : "Runtime Error") + "  ";
+		    var _header_padding = _box_width - string_length(_header) - 2;
+		    var _left_pad = floor(_header_padding / 2);
+		    var _right_pad = _header_padding - _left_pad;
+		    _output += "║" + string_repeat(" ", _left_pad) + _header + string_repeat(" ", _right_pad) + "║\n";
+    
+		    // separator
+		    _output += "╠" + string_repeat("═", _box_width - 2) + "╣\n";
+    
+		    // rrror type and message
+			var _error_type_str = "[" + ((type == "parse_error") ? "ParseError" : "RuntimeError") + "] " + message;
+			var _msg_lines = string_wrap(_error_type_str, _box_width - 6);
+			for (var i = 0; i < array_length(_msg_lines); i++) {
+			    _output += "║  " + string_pad_right(_msg_lines[i], _box_width - 6) + "  ║\n";
+			}
+			_output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+    
+		    // location
+		    if (line >= 0) {
+		        var _loc_str = "  at line " + string(line);
+		        if (column >= 0) _loc_str += ", column " + string(column);
+		        if (source_name != "") _loc_str += " in \"" + source_name + "\"";
+		        _output += "║ " + string_pad_right(_loc_str, _box_width - 4) + " ║\n";
+		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+		    }
+    
+		    // source context
+			if (source != "" && line >= 0) {
+			    var _lines = string_split(source, "\n");
+			    var _start = max(0, line - 3);
+			    var _end = min(array_length(_lines), line + 2);
+    
+			    for (var i = _start; i < _end; i++) {
+			        var _line_num = string(i + 1);
+			        var _prefix = (i == line - 1) ? "> " : "  ";
+			        var _line_content = _lines[i];
+        
+			        _line_content = string_replace_all(_line_content, "\r", "");
+        
+			        var _display_line = _prefix + string_pad_left(_line_num, 3) + " | " + _line_content;
+        
+			        var _max_len = _box_width - 6;
+			        if (string_length(_display_line) > _max_len) {
+			            _display_line = string_copy(_display_line, 1, _max_len - 3) + "...";
+			        }
+        
+			        _output += "║  " + string_pad_right(_display_line, _max_len) + "  ║\n";
+        
+			        if (i == line - 1 && column >= 0) {
+			            var _indent = string_length(_prefix) + 3 + 3; // prefix + line num + " | "
+			            var _indicator = string_repeat(" ", _indent + column - 1) + "^";
+			            if (string_length(_indicator) > _max_len) {
+			                _indicator = string_repeat(" ", _indent) + "^";
+			            }
+			            _output += "║  " + string_pad_right(_indicator, _max_len) + "  ║\n";
+			        }
+			    }
+			    _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+			}
+    
+		    // hint
+		    var _hint = "";
+		    if (string_pos("not defined", message) > 0 || string_pos("does not exist", message) > 0) {
+		        if (string_pos("Function", message) > 0 || string_pos("function", message) > 0) {
+		            _hint = "  Hint: Make sure the function exists and is spelled correctly.";
+		        } else {
+		            _hint = "  Hint: Check for typos or declare the variable first.";
+		        }
+		    } else if (string_pos("Cannot call", message) > 0) {
+		        _hint = "  Hint: Make sure the function exists and is spelled correctly.";
+		    } else if (string_pos("out of bounds", message) > 0) {
+		        _hint = "  Hint: Check array/list index bounds before accessing.";
+		    }
+    
+		    if (_hint != "") {
+		        _output += "║ " + string_pad_right(_hint, _box_width - 4) + " ║\n";
+		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+		    }
+    
+		    // bottom border
+		    _output += "╚" + string_repeat("═", _box_width - 2) + "╝";
+    
+		    return _output;
+		}
+    };
+}
+
+function string_pad_right(_str, _len) {
+    var _str_len = string_length(_str);
+    if (_str_len >= _len) return _str;
+    return _str + string_repeat(" ", _len - _str_len);
+}
+
+function string_pad_left(_str, _len) {
+    var _str_len = string_length(_str);
+    if (_str_len >= _len) return _str;
+    return string_repeat(" ", _len - _str_len) + _str;
+}
+
+function string_wrap(_str, _width) {
+    var _words = string_split(_str, " ");
+    var _lines = [];
+    var _current = "";
+    
+    for (var i = 0; i < array_length(_words); i++) {
+        var _word = _words[i];
+        if (string_length(_current) + string_length(_word) + 1 <= _width) {
+            if (_current != "") _current += " ";
+            _current += _word;
+        } else {
+            if (_current != "") array_push(_lines, _current);
+            _current = _word;
+        }
+    }
+    if (_current != "") array_push(_lines, _current);
+    
+    return _lines;
+}
+
+function gmlvm_print_error(_error) {
+    if (is_struct(_error) && struct_exists(_error, "toString")) {
+        show_debug_message(_error.toString());
+    } else {
+        show_debug_message("GMLVM Error: " + string(_error));
+    }
+}
+
+function gmlvm_error_formatter() constructor {
+    show_full_stack = true;
+    show_source_context = true;
+    max_stack_depth = 10;
+    context_lines = 2;
+    
+    static FormatError = function(_error, _source_code = "", _source_name = "<script>") {
+        var _err_type = "Runtime Error";
+        var _err_msg = string(_error);
+        var _line = -1;
+        var _column = -1;
+        
+        if (is_struct(_error)) {
+            if (struct_exists(_error, "type")) {
+                if (_error.type == "parse_error") {
+                    _err_type = "Parse Error";
+                    _err_msg = _error.message;
+                    _line = _error.line;
+                    _column = _error.column;
+                } else if (_error.type == "runtime_error") {
+                    _err_type = "Runtime Error";
+                    _err_msg = _error.message;
+                    _line = _error.line;
+                    _column = _error.column;
+                }
+            }
+        }
+        
+        if (_line == -1) {
+            var _match = string_match_extract(_err_msg, "at line (\\d+)");
+            if (_match != "") _line = real(_match);
+        }
+        
+        var _output = "\n";
+        _output += "──────────────────────────────────────────────────────────────────\n";
+        _output += "GMLVM " + _err_type + ": " + _err_msg + "\n";
+        _output += "──────────────────────────────────────────────────────────────────\n";
+        
+        _output += "  File: " + _source_name + "\n";
+        if (_line >= 0) {
+            _output += "  Line: " + string(_line);
+            if (_column >= 0) _output += ", Column: " + string(_column);
+            _output += "\n\n";
+        }
+        
+        if (show_source_context && _source_code != "" && _line >= 0) {
+            _output += FormatSourceContext(_source_code, _line, _column) + "\n";
+        }
+        
+        if (show_full_stack) {
+            _output += "  Stack:\n";
+            _output += FormatStackTrace() + "\n";
+        }
+        
+        _output += "──────────────────────────────────────────────────────────────────";
+        
+        return _output;
+    };
+    
+    static FormatSourceContext = function(_code, _line, _column) {
+        var _lines = string_split(_code, "\n");
+        var _output = "";
+        
+        var _start = max(0, _line - context_lines - 1);
+        var _end = min(array_length(_lines), _line + context_lines);
+        
+        for (var i = _start; i < _end; i++) {
+            var _prefix = "    ";
+            if (i == _line - 1) {
+                _prefix = "  > ";
+            } else {
+                _prefix = "    ";
+            }
+            
+            _output += _prefix + string(i + 1) + " | " + _lines[i] + "\n";
+            
+            if (i == _line - 1 && _column >= 0) {
+                _output += "    " + string_repeat(" ", string_length(string(i + 1)) + 3 + _column - 1);
+                _output += "^\n";
+            }
+        }
+        
+        return _output;
+    };
+    
+    static FormatStackTrace = function() {
+        var _stack = global.__gmlvm_call_stack;
+        if (_stack == undefined) return "    (no stack trace available)";
+        
+        var _output = "";
+        var _count = min(array_length(_stack), max_stack_depth);
+        
+        for (var i = _count - 1; i >= 0; i--) {
+            var _frame = _stack[i];
+            _output += "    at " + _frame.name;
+            if (_frame.line >= 0) {
+                _output += " (line " + string(_frame.line) + ")";
+            }
+            _output += "\n";
+        }
+        
+        if (array_length(_stack) > max_stack_depth) {
+            _output += "    ... " + string(array_length(_stack) - max_stack_depth) + " more frames\n";
+        }
+        
+        return _output;
+    };
+    
+    static string_repeat = function(_str, _count) {
+        var _result = "";
+        for (var i = 0; i < _count; i++) _result += _str;
+        return _result;
+    };
+    
+    static string_match_extract = function(_str, _pattern) {
+        var _pos = string_pos(_pattern, _str);
+        if (_pos == 0) return "";
+        
+        return "";
+    };
 }
 
 function gmlvm_warning_collector() constructor {
@@ -671,11 +953,59 @@ function gmlvm_run_cached(_code, _self = self, _other = other) {
     return gmlvm_vm(_ast, _self, _other);
 }
 
+//function gmlvm_run(_code, _self = self, _other = other) {
+//    var _processed = gmlvm_preprocess(_code);
+//    var _tokens = gmlvm_tokenize(_processed);
+//    var _ast = gmlvm_parse(_tokens);
+//	return gmlvm_vm(_ast, _self, _other);
+//}
+
 function gmlvm_run(_code, _self = self, _other = other) {
     var _processed = gmlvm_preprocess(_code);
+    _processed = string_replace_all(_processed, "\r", "");
     var _tokens = gmlvm_tokenize(_processed);
     var _ast = gmlvm_parse(_tokens);
-	return gmlvm_vm(_ast, _self, _other);
+    
+    global.__gmlvm_last_source = _processed;
+    global.__gmlvm_last_source_name = "<script>";
+    
+    try {
+        return gmlvm_vm(_ast, _self, _other);
+    } catch (_err) {
+        if (is_struct(_err) && struct_exists(_err, "type") && (_err.type == "runtime_error" || _err.type == "parse_error")) {
+            _err.source = _processed;
+            _err.source_name = "<script>";
+			var _msg = _err.toString();
+            show_debug_message(_msg);
+            global.__gmlvm_last_error = _err;
+        } else {
+            var _clean_err = gmlvm_create_error(
+                "runtime_error",
+                string(_err),
+                -1, -1
+            );
+            _clean_err.source = _processed;
+            _clean_err.source_name = "<script>";
+            var _msg = _clean_err.toString();
+            show_debug_message(_msg);
+            global.__gmlvm_last_error = _clean_err;
+        }
+        return undefined;
+    }
+}
+
+function gmlvm_run_file(_filename, _self = self, _other = other) {
+    var _code = file_read(_filename);
+    global.__gmlvm_last_source = _code;
+    global.__gmlvm_last_source_name = _filename;
+    
+    try {
+        return gmlvm_run(_code, _self, _other);
+    } catch (_err) {
+        var _formatter = global.__gmlvm_error_formatter;
+        var _msg = _formatter.FormatError(_err, _code, _filename);
+        return undefined;
+    }
 }
 
 function gmlvm_tokenize_only(_code) {
@@ -683,18 +1013,11 @@ function gmlvm_tokenize_only(_code) {
     return gmlvm_tokenize(_processed);
 }
 
-function gmlvm_parse_only(_code) {
-    var _processed = gmlvm_preprocess(_code);
-    var _tokens = gmlvm_tokenize(_processed);
-    return gmlvm_parse(_tokens);
-}
-
 function gmlvm_preprocess(_code) {
     var _macros = ds_map_create();
     var _lines = string_split(_code, "\n");
     var _processed_code = "";
     
-    // First pass: collect all macros
     for (var _i = 0; _i < array_length(_lines); _i++) {
         var _line = _lines[_i];
         var _trimmed = string_trim(_line);
@@ -713,7 +1036,6 @@ function gmlvm_preprocess(_code) {
         }
     }
     
-    // Expand macro values (resolve nested macros)
     var _macro_names = ds_map_keys_to_array(_macros);
     var _changed = true;
     var _max_iterations = 10;
@@ -744,17 +1066,14 @@ function gmlvm_preprocess(_code) {
         }
     }
     
-    // Second pass: process lines and replace macros
     for (var _i = 0; _i < array_length(_lines); _i++) {
         var _line = _lines[_i];
         var _trimmed = string_trim(_line);
         
-        // Skip macro definitions and region directives
         if (string_pos("#macro", _trimmed) == 1) continue;
         if (string_pos("#region", _trimmed) == 1) continue;
         if (string_pos("#endregion", _trimmed) == 1) continue;
         
-        // Replace macros
         var _processed_line = _line;
         for (var _j = 0; _j < array_length(_macro_names); _j++) {
             var _name = _macro_names[_j];

@@ -21,15 +21,11 @@ file_read = function(_path) {
     return content;
 };
 
-create_code = file_read("oTest_Create.gml");
-step_code = file_read("oTest_Step.gml");
-draw_code = file_read("oTest_Draw.gml");
-
 gmlvm_init();
 
-create_parse = gmlvm_parse_only(create_code);
-step_parse = gmlvm_parse_only(step_code);
-draw_parse = gmlvm_parse_only(draw_code);
+create_parse = gmlvm_parse_only(file_read("oTest_Create.gml"));
+step_parse = gmlvm_parse_only(file_read("oTest_Step.gml"));
+draw_parse = gmlvm_parse_only(file_read("oTest_Draw.gml"));
 
 gmlvm_vm(create_parse, self);
 
@@ -734,11 +730,11 @@ return result;
 show_debug_message("77. Self in with (struct): " + string(_test77) + " (expected 10)");
 
 var _test78 = gmlvm_run(@"
-x = 5;
+_x = 5;
 var inner = { y: 10 };
 var result = 0;
 with (inner) {
-    result = other.x + self.y;
+    result = other._x + self.y;
 }
 return result;
 ");
@@ -921,6 +917,41 @@ return foo();
 ");
 show_debug_message("100. Exit in function: " + string(_test100) + " (expected undefined)");
 
+/*
+╔══════════════════════════════════════════════════════════════╗
+║  GMLVM Runtime Error                                         ║
+╠══════════════════════════════════════════════════════════════╣
+║  [ErrorType] Error message                                   ║
+║                                                              ║
+║  at line 5, column 12 in "player_script"                     ║
+║                                                              ║
+║    3 | var spd = 5;                                          ║
+║    4 | var hp = 100;                                         ║
+║  > 5 | x += spd * unknown_var;                               ║
+║              ^^^^^^^^^^^^                                    ║
+║                                                              ║
+║  Variable 'unknown_var' not defined                          ║
+║                                                              ║
+║  Stack trace (most recent first):                            ║
+║    at update_position (line 12, column 3)                    ║
+║    at step_event (line 25, column 1)                         ║
+║    at main (line 30, column 1)                               ║
+╚══════════════════════════════════════════════════════════════╝
+*/
+
+var _testError = gmlvm_run(@"
+var spd = 5;
+var hp = 100;
+var target = find_enemy();
+
+// Bug: typo in variable name
+x += spd * target.speedd;
+
+if (hp < 0) {
+    destroy();
+}
+");
+
 // Create a strict sandbox for simple calculations
 var sandbox = new gmlvm_sandbox();
 sandbox.PresetStrict();
@@ -946,6 +977,7 @@ var result3 = gmlvm_run_sandboxed(@"
     return inst;
 ", sandbox);
 // Throws: "Sandbox: Function 'instance_create_depth' is not allowed"
+
 
 
 
