@@ -68,110 +68,277 @@ function gmlvm_pop_call_stack() {
     }
 }
 
-function gmlvm_create_error(_type, _message, _line, _column, _source_name = "<script>") {
+function gmlvm_create_error(_type, _message, _line, _column, _token_length) {
+    if (_token_length == undefined) _token_length = 1;
+    
+    var _stack = [];
+    if (struct_exists(global, "__gmlvm_call_stack")) {
+        var _call_stack = global.__gmlvm_call_stack;
+        for (var i = array_length(_call_stack) - 1; i >= 0; i--) {
+            array_push(_stack, _call_stack[i]);
+        }
+    }
+    
+    array_push(_stack, {
+        name: "<script>",
+        line: _line,
+        column: _column
+    });
+    
     return {
         type: _type,
         message: _message,
         line: _line,
         column: _column,
+        token_length: _token_length,
         source: "",
-        source_name: _source_name,
-        stack_trace: [],
+        source_name: "<script>",
+        stack_trace: _stack,
         
         toString: function() {
-		    var _output = "";
-		    var _box_width = 68;
-    
-		    // top border
-		    _output += "╔" + string_repeat("═", _box_width - 2) + "╗\n";
-    
-		    // header
-		    var _header = "  GMLVM " + ((type == "parse_error") ? "Parse Error" : "Runtime Error") + "  ";
-		    var _header_padding = _box_width - string_length(_header) - 2;
-		    var _left_pad = floor(_header_padding / 2);
-		    var _right_pad = _header_padding - _left_pad;
-		    _output += "║" + string_repeat(" ", _left_pad) + _header + string_repeat(" ", _right_pad) + "║\n";
-    
-		    // separator
-		    _output += "╠" + string_repeat("═", _box_width - 2) + "╣\n";
-    
-		    // rrror type and message
-			var _error_type_str = "[" + ((type == "parse_error") ? "ParseError" : "RuntimeError") + "] " + message;
-			var _msg_lines = string_wrap(_error_type_str, _box_width - 6);
-			for (var i = 0; i < array_length(_msg_lines); i++) {
-			    _output += "║  " + string_pad_right(_msg_lines[i], _box_width - 6) + "  ║\n";
-			}
-			_output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
-    
-		    // location
-		    if (line >= 0) {
-		        var _loc_str = "  at line " + string(line);
-		        if (column >= 0) _loc_str += ", column " + string(column);
-		        if (source_name != "") _loc_str += " in \"" + source_name + "\"";
-		        _output += "║ " + string_pad_right(_loc_str, _box_width - 4) + " ║\n";
-		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
-		    }
-    
-		    // source context
-			if (source != "" && line >= 0) {
-			    var _lines = string_split(source, "\n");
-			    var _start = max(0, line - 3);
-			    var _end = min(array_length(_lines), line + 2);
-    
-			    for (var i = _start; i < _end; i++) {
-			        var _line_num = string(i + 1);
-			        var _prefix = (i == line - 1) ? "> " : "  ";
-			        var _line_content = _lines[i];
-        
-			        _line_content = string_replace_all(_line_content, "\r", "");
-        
-			        var _display_line = _prefix + string_pad_left(_line_num, 3) + " | " + _line_content;
-        
-			        var _max_len = _box_width - 6;
-			        if (string_length(_display_line) > _max_len) {
-			            _display_line = string_copy(_display_line, 1, _max_len - 3) + "...";
-			        }
-        
-			        _output += "║  " + string_pad_right(_display_line, _max_len) + "  ║\n";
-        
-			        if (i == line - 1 && column >= 0) {
-			            var _indent = string_length(_prefix) + 3 + 3; // prefix + line num + " | "
-			            var _indicator = string_repeat(" ", _indent + column - 1) + "^";
-			            if (string_length(_indicator) > _max_len) {
-			                _indicator = string_repeat(" ", _indent) + "^";
-			            }
-			            _output += "║  " + string_pad_right(_indicator, _max_len) + "  ║\n";
-			        }
-			    }
-			    _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
-			}
-    
-		    // hint
-		    var _hint = "";
-		    if (string_pos("not defined", message) > 0 || string_pos("does not exist", message) > 0) {
-		        if (string_pos("Function", message) > 0 || string_pos("function", message) > 0) {
-		            _hint = "  Hint: Make sure the function exists and is spelled correctly.";
-		        } else {
-		            _hint = "  Hint: Check for typos or declare the variable first.";
-		        }
-		    } else if (string_pos("Cannot call", message) > 0) {
-		        _hint = "  Hint: Make sure the function exists and is spelled correctly.";
-		    } else if (string_pos("out of bounds", message) > 0) {
-		        _hint = "  Hint: Check array/list index bounds before accessing.";
-		    }
-    
-		    if (_hint != "") {
-		        _output += "║ " + string_pad_right(_hint, _box_width - 4) + " ║\n";
-		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
-		    }
-    
-		    // bottom border
-		    _output += "╚" + string_repeat("═", _box_width - 2) + "╝";
-    
-		    return _output;
-		}
+            var _output = "\n";
+            var _box_width = 68;
+            
+            // top border
+            _output += "╔" + string_repeat("═", _box_width - 2) + "╗\n";
+            
+            // header
+            var _header = "  GMLVM " + ((type == "parse_error") ? "Parse Error" : "Runtime Error") + "  ";
+            var _header_padding = _box_width - string_length(_header) - 2;
+            var _left_pad = floor(_header_padding / 2);
+            var _right_pad = _header_padding - _left_pad;
+            _output += "║" + string_repeat(" ", _left_pad) + _header + string_repeat(" ", _right_pad) + "║\n";
+            
+            // separator
+            _output += "╠" + string_repeat("═", _box_width - 2) + "╣\n";
+            
+            // error type and message
+            var _error_type_str = "  [" + ((type == "parse_error") ? "ParseError" : "RuntimeError") + "] " + message;
+            var _msg_lines = string_wrap(_error_type_str, _box_width - 6);
+            for (var i = 0; i < array_length(_msg_lines); i++) {
+                _output += "║  " + string_pad_right(_msg_lines[i], _box_width - 6) + "  ║\n";
+            }
+            _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+            
+            // location
+            if (line >= 0) {
+                var _loc_str = "at line " + string(line);
+                if (column >= 0) _loc_str += ", column " + string(column);
+                if (source_name != "") _loc_str += " in \"" + source_name + "\"";
+                _output += "║  " + string_pad_right(_loc_str, _box_width - 6) + "  ║\n";
+                _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+            }
+            
+            // source context
+            if (source != "" && line >= 0) {
+                var _lines = string_split(source, "\n");
+                var _start = max(0, line - 3);
+                var _end = min(array_length(_lines), line + 2);
+                
+                for (var i = _start; i < _end; i++) {
+                    var _line_num = string(i + 1);
+                    var _prefix = (i == line - 1) ? "> " : "  ";
+                    var _line_content = _lines[i];
+                    
+                    _line_content = string_replace_all(_line_content, "\r", "");
+                    
+                    var _display_line = _prefix + string_pad_left(_line_num, 3) + " | " + _line_content;
+                    
+                    var _max_len = _box_width - 6;
+                    if (string_length(_display_line) > _max_len) {
+                        _display_line = string_copy(_display_line, 1, _max_len - 3) + "...";
+                    }
+                    
+                    _output += "║  " + string_pad_right(_display_line, _max_len) + "  ║\n";
+                    
+                    if (i == line - 1 && column >= 0) {
+                        var _indent = string_length(_prefix) + 3 + 3; // prefix + line num + " | "
+                        var _underline = string_repeat(" ", _indent + column - 1) + string_repeat("^", token_length);
+                        if (string_length(_underline) > _max_len) {
+                            _underline = string_copy(_underline, 1, _max_len);
+                        }
+                        _output += "║  " + string_pad_right(_underline, _max_len) + "  ║\n";
+                    }
+                }
+                _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+            }
+            
+            // explanation
+            var _explanation = "";
+            if (string_pos("not defined", message) > 0 || string_pos("does not exist", message) > 0) {
+                if (string_pos("Function", message) > 0 || string_pos("function", message) > 0) {
+                    _explanation = "The function '" + extract_name(message) + "' is not defined in this scope.";
+                } else if (string_pos("Variable", message) > 0) {
+                    _explanation = "The variable '" + extract_name(message) + "' is not defined in this scope.";
+                } else {
+                    _explanation = "The identifier '" + extract_name(message) + "' could not be found.";
+                }
+            } else if (string_pos("Cannot call", message) > 0) {
+                _explanation = "You are trying to call something that is not a function.";
+            } else if (string_pos("out of bounds", message) > 0) {
+                _explanation = "The index you are trying to access is outside the valid range.";
+            } else if (string_pos("read-only", message) > 0) {
+                _explanation = "This property cannot be modified.";
+            } else if (string_pos("Sandbox", message) > 0) {
+                _explanation = "This operation is restricted by the sandbox security settings.";
+            } else {
+                _explanation = message;
+            }
+            
+            if (_explanation != "") {
+                var _exp_lines = string_wrap(_explanation, _box_width - 6);
+                for (var i = 0; i < array_length(_exp_lines); i++) {
+                    _output += "║  " + string_pad_right(_exp_lines[i], _box_width - 6) + "  ║\n";
+                }
+                _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+            }
+            
+            // stack trace
+            if (array_length(stack_trace) > 0) {
+                _output += "║  Stack trace (most recent first):" + string_repeat(" ", _box_width - 38) + "  ║\n";
+                var _count = min(array_length(stack_trace), 5);
+                for (var i = 0; i < _count; i++) {
+                    var _frame = stack_trace[i];
+                    var _frame_str = "  at " + _frame.name;
+                    if (_frame.line >= 0) {
+                        _frame_str += " (line " + string(_frame.line);
+                        if (_frame.column >= 0) _frame_str += ", column " + string(_frame.column);
+                        _frame_str += ")";
+                    }
+                    if (string_length(_frame_str) > _box_width - 6) {
+                        _frame_str = string_copy(_frame_str, 1, _box_width - 9) + "...";
+                    }
+                    _output += "║  " + string_pad_right(_frame_str, _box_width - 6) + "  ║\n";
+                }
+                if (array_length(stack_trace) > 5) {
+                    var _remaining = array_length(stack_trace) - 5;
+                    var _rem_str = "... and " + string(_remaining) + " more frame(s)";
+                    _output += "║  " + string_pad_right(_rem_str, _box_width - 6) + "  ║\n";
+                }
+                _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+            }
+            
+            // bottom border
+            _output += "╚" + string_repeat("═", _box_width - 2) + "╝";
+            
+            return _output;
+        }
     };
 }
+
+function extract_name(_msg) {
+    var _start = string_pos("'", _msg);
+    if (_start == 0) return "unknown";
+    _start++;
+    var _end = string_pos("'", string_copy(_msg, _start, string_length(_msg)));
+    if (_end == 0) return "unknown";
+    return string_copy(_msg, _start, _end - 1);
+}
+
+//function gmlvm_create_error(_type, _message, _line, _column, _source_name = "<script>") {
+//    return {
+//        type: _type,
+//        message: _message,
+//        line: _line,
+//        column: _column,
+//        source: "",
+//        source_name: _source_name,
+//        stack_trace: [],
+//        
+//        toString: function() {
+//		    var _output = "";
+//		    var _box_width = 68;
+//    
+//		    // top border
+//		    _output += "╔" + string_repeat("═", _box_width - 2) + "╗\n";
+//    
+//		    // header
+//		    var _header = "  GMLVM " + ((type == "parse_error") ? "Parse Error" : "Runtime Error") + "  ";
+//		    var _header_padding = _box_width - string_length(_header) - 2;
+//		    var _left_pad = floor(_header_padding / 2);
+//		    var _right_pad = _header_padding - _left_pad;
+//		    _output += "║" + string_repeat(" ", _left_pad) + _header + string_repeat(" ", _right_pad) + "║\n";
+//    
+//		    // separator
+//		    _output += "╠" + string_repeat("═", _box_width - 2) + "╣\n";
+//    
+//		    // rrror type and message
+//			var _error_type_str = "[" + ((type == "parse_error") ? "ParseError" : "RuntimeError") + "] " + message;
+//			var _msg_lines = string_wrap(_error_type_str, _box_width - 6);
+//			for (var i = 0; i < array_length(_msg_lines); i++) {
+//			    _output += "║  " + string_pad_right(_msg_lines[i], _box_width - 6) + "  ║\n";
+//			}
+//			_output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+//    
+//		    // location
+//		    if (line >= 0) {
+//		        var _loc_str = "  at line " + string(line);
+//		        if (column >= 0) _loc_str += ", column " + string(column);
+//		        if (source_name != "") _loc_str += " in \"" + source_name + "\"";
+//		        _output += "║ " + string_pad_right(_loc_str, _box_width - 4) + " ║\n";
+//		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+//		    }
+//    
+//		    // source context
+//			if (source != "" && line >= 0) {
+//			    var _lines = string_split(source, "\n");
+//			    var _start = max(0, line - 3);
+//			    var _end = min(array_length(_lines), line + 2);
+//    
+//			    for (var i = _start; i < _end; i++) {
+//			        var _line_num = string(i + 1);
+//			        var _prefix = (i == line - 1) ? "> " : "  ";
+//			        var _line_content = _lines[i];
+//        
+//			        _line_content = string_replace_all(_line_content, "\r", "");
+//        
+//			        var _display_line = _prefix + string_pad_left(_line_num, 3) + " | " + _line_content;
+//        
+//			        var _max_len = _box_width - 6;
+//			        if (string_length(_display_line) > _max_len) {
+//			            _display_line = string_copy(_display_line, 1, _max_len - 3) + "...";
+//			        }
+//        
+//			        _output += "║  " + string_pad_right(_display_line, _max_len) + "  ║\n";
+//        
+//			        if (i == line - 1 && column >= 0) {
+//			            var _indent = string_length(_prefix) + 3 + 3; // prefix + line num + " | "
+//			            var _indicator = string_repeat(" ", _indent + column - 1) + "^";
+//			            if (string_length(_indicator) > _max_len) {
+//			                _indicator = string_repeat(" ", _indent) + "^";
+//			            }
+//			            _output += "║  " + string_pad_right(_indicator, _max_len) + "  ║\n";
+//			        }
+//			    }
+//			    _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+//			}
+//    
+//		    // hint
+//		    var _hint = "";
+//		    if (string_pos("not defined", message) > 0 || string_pos("does not exist", message) > 0) {
+//		        if (string_pos("Function", message) > 0 || string_pos("function", message) > 0) {
+//		            _hint = "  Hint: Make sure the function exists and is spelled correctly.";
+//		        } else {
+//		            _hint = "  Hint: Check for typos or declare the variable first.";
+//		        }
+//		    } else if (string_pos("Cannot call", message) > 0) {
+//		        _hint = "  Hint: Make sure the function exists and is spelled correctly.";
+//		    } else if (string_pos("out of bounds", message) > 0) {
+//		        _hint = "  Hint: Check array/list index bounds before accessing.";
+//		    }
+//    
+//		    if (_hint != "") {
+//		        _output += "║ " + string_pad_right(_hint, _box_width - 4) + " ║\n";
+//		        _output += "║" + string_repeat(" ", _box_width - 2) + "║\n";
+//		    }
+//    
+//		    // bottom border
+//		    _output += "╚" + string_repeat("═", _box_width - 2) + "╝";
+//    
+//		    return _output;
+//		}
+//    };
+//}
 
 function string_pad_right(_str, _len) {
     var _str_len = string_length(_str);
@@ -451,15 +618,19 @@ function gmlvm_warning(_category, _message, _line = -1, _column = -1) {
     }
 }
 
-function gmlvm_parse_error(_message, _line, _column) constructor {
-    type    = "parse_error";
-    message = _message;
-    line    = _line;
-    column  = _column;
+function gmlvm_parse_error(_message, _line, _column, _token_value) {
+    var _token_length = 1;
+    if (_token_value != undefined) {
+        _token_length = string_length(_token_value);
+    }
     
-    static toString = function() {
-        return "Parse Error at line " + string(line) + ", column " + string(column) + ": " + message;
-    };
+    return gmlvm_create_error(
+        "parse_error",
+        _message,
+        _line,
+        _column,
+        _token_length
+    );
 }
 
 function gmlvm_runtime_error(_message, _line, _column) constructor {
@@ -949,15 +1120,19 @@ function gmlvm_tokenize(_src) {
 
 function format_error_with_source(_err, _source, _source_name) {
     if (is_struct(_err) && struct_exists(_err, "type") && (_err.type == "runtime_error" || _err.type == "parse_error")) {
-        // Attach source to the error
         _err.source = _source;
         _err.source_name = _source_name;
         return _err.toString();
     } else {
+        var _error_msg = string(_err);
+        if (is_struct(_err) && struct_exists(_err, "message")) {
+            _error_msg = _err.message;
+        }
         var _clean_err = gmlvm_create_error(
             "runtime_error",
-            string(_err),
-            -1, -1
+            _error_msg,
+            -1, -1,
+            0
         );
         _clean_err.source = _source;
         _clean_err.source_name = _source_name;

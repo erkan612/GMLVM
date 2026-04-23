@@ -127,7 +127,8 @@ function gmlvm_vm_get_access(_node, _ctx) {
                 "runtime_error",
                 "Property '" + _prop + "' does not exist on struct",
                 _node.line,
-                _node.column
+                _node.column,
+				string_length(_prop)
             );
         }
         
@@ -773,6 +774,21 @@ function gmlvm_vm_call_ext(_func, _args) {
 }
 
 function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
+    var _frame_name = "";
+    if (struct_exists(_func, "__gmlvm_name")) {
+        _frame_name = _func.__gmlvm_name;
+    }
+    if (_frame_name == "") _frame_name = "<anonymous>";
+    
+    var _frame_line = struct_exists(_func, "__gmlvm_line") ? _func.__gmlvm_line : -1;
+    var _frame_column = struct_exists(_func, "__gmlvm_column") ? _func.__gmlvm_column : -1;
+    
+    array_push(global.__gmlvm_call_stack, {
+        name: _frame_name,
+        line: _frame_line,
+        column: _frame_column
+    });
+    
     var _body = _func.__gmlvm_body;
     var _params = _func.__gmlvm_params;
     var _self_inst = _func.__gmlvm_self;
@@ -888,7 +904,15 @@ function gmlvm_vm_call_gmlvm_function(_func, _args, _caller_ctx) {
         _func_ctx.locals[$ "argument" + string(_i)] = _args[_i];
     }
     
-    var _result = gmlvm_vm_evaluate(_body, _func_ctx);
+	var _result = undefined;
+	
+	try {
+		_result = gmlvm_vm_evaluate(_body, _func_ctx);
+	} finally {
+		if (array_length(global.__gmlvm_call_stack) > 0) {
+	        array_pop(global.__gmlvm_call_stack);
+	    }
+	}
     
     if (is_struct(_result) && struct_exists(_result, "type")) {
 	    if (_result.type == "return") {

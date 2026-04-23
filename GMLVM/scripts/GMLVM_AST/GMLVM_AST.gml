@@ -533,15 +533,24 @@ function gmlvm_call_node(_callee, _args, _line = -1, _column = -1) constructor {
         
         if (_func == undefined) {
             var _name = "";
+	        var _error_line = line;
+	        var _error_column = column;
+	        var _token_length = 1;
+			
             if (callee.type == "var") {
                 _name = callee.name;
+	            _error_line = callee.line;
+	            _error_column = callee.column;
+	            _token_length = string_length(_name);
             }
-            throw gmlvm_create_error(
-                "runtime_error",
-                "Function '" + _name + "' is not defined",
-                line,
-                column
-            );
+			
+	        throw gmlvm_create_error(
+	            "runtime_error",
+	            "Function '" + _name + "' is not defined",
+	            _error_line,
+	            _error_column,
+	            _token_length
+	        );
         }
         
         var _arg_values = [];
@@ -580,6 +589,8 @@ function gmlvm_function_node(_name, _params, _param_defaults, _body, _is_constru
         var _func = {
             __gmlvm_type: "function",
             __gmlvm_name: name,
+		    __gmlvm_line: line,
+		    __gmlvm_column: column,
             __gmlvm_params: params,
             __gmlvm_param_defaults: param_defaults,
             __gmlvm_body: body,
