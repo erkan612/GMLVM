@@ -28,6 +28,7 @@
     {"id":{"name":"Object2","path":"objects/Object2/Object2.yy",},},
     {"id":{"name":"oTest","path":"objects/oTest/oTest.yy",},},
     {"id":{"name":"rTest","path":"rooms/rTest/rTest.yy",},},
+    {"id":{"name":"cTests","path":"scripts/cTests/cTests.yy",},},
     {"id":{"name":"GMLVM_AST","path":"scripts/GMLVM_AST/GMLVM_AST.yy",},},
     {"id":{"name":"GMLVM_Core","path":"scripts/GMLVM_Core/GMLVM_Core.yy",},},
     {"id":{"name":"GMLVM_Parser","path":"scripts/GMLVM_Parser/GMLVM_Parser.yy",},},

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"cTests",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"cTests",
+  "parent":{
+    "name":"GMLVM",
+    "path":"GMLVM.yyp",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
