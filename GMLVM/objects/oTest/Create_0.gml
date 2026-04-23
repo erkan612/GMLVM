@@ -1,6 +1,6 @@
 file_read = function(_path) {
     if (!file_exists(_path)) {
-        return ""; // or you could throw an error
+        return "";
     }
 
     var file = file_text_open_read(_path);

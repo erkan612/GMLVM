@@ -11,3 +11,4 @@ if (keyboard_check(ord("D"))) {
     x += spd;
 }
 //if (!place_meeting(x, y, Object2)) { show_debug_message(delta_time); }
+some error here

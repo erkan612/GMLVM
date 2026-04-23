@@ -39,6 +39,7 @@
 *********************************************************************************************/
 
 function gmlvm_init() {
+	global.__gmlvm_last_error = undefined;
 	global.__gmlvm_static_registry = {};
 	global.__gmlvm_warnings = { // TODO: add more warnings
 	    undefined_binary_left: true,
@@ -67,14 +68,14 @@ function gmlvm_pop_call_stack() {
     }
 }
 
-function gmlvm_create_error(_type, _message, _line, _column) {
+function gmlvm_create_error(_type, _message, _line, _column, _source_name = "<script>") {
     return {
         type: _type,
         message: _message,
         line: _line,
         column: _column,
         source: "",
-        source_name: "<script>",
+        source_name: _source_name,
         stack_trace: [],
         
         toString: function() {
@@ -946,6 +947,24 @@ function gmlvm_tokenize(_src) {
     return _tokens;
 }
 
+function format_error_with_source(_err, _source, _source_name) {
+    if (is_struct(_err) && struct_exists(_err, "type") && (_err.type == "runtime_error" || _err.type == "parse_error")) {
+        // Attach source to the error
+        _err.source = _source;
+        _err.source_name = _source_name;
+        return _err.toString();
+    } else {
+        var _clean_err = gmlvm_create_error(
+            "runtime_error",
+            string(_err),
+            -1, -1
+        );
+        _clean_err.source = _source;
+        _clean_err.source_name = _source_name;
+        return _clean_err.toString();
+    }
+}
+
 function gmlvm_run_cached(_code, _self = self, _other = other) {
     var _ast = gmlvm_parse_cached(_code);
     return gmlvm_vm(_ast, _self, _other);
@@ -958,21 +977,20 @@ function gmlvm_run_cached(_code, _self = self, _other = other) {
 //	return gmlvm_vm(_ast, _self, _other);
 //}
 
-function gmlvm_run(_code, _self = self, _other = other) {
+function gmlvm_run(_code, _self = self, _other = other, _source_name = "<script>") {
     var _processed = gmlvm_preprocess(_code);
-    _processed = string_replace_all(_processed, "\r", "");
     var _tokens = gmlvm_tokenize(_processed);
-    var _ast = gmlvm_parse(_tokens);
-    
+    var _ast = gmlvm_parse(_tokens, _processed, _source_name);
+	
     global.__gmlvm_last_source = _processed;
-    global.__gmlvm_last_source_name = "<script>";
+    global.__gmlvm_last_source_name = _source_name;
     
     try {
         return gmlvm_vm(_ast, _self, _other);
     } catch (_err) {
         if (is_struct(_err) && struct_exists(_err, "type") && (_err.type == "runtime_error" || _err.type == "parse_error")) {
             _err.source = _processed;
-            _err.source_name = "<script>";
+            _err.source_name = _source_name;
 			var _msg = _err.toString();
             show_debug_message(_msg);
             global.__gmlvm_last_error = _err;
@@ -983,7 +1001,7 @@ function gmlvm_run(_code, _self = self, _other = other) {
                 -1, -1
             );
             _clean_err.source = _processed;
-            _clean_err.source_name = "<script>";
+            _clean_err.source_name = _source_name;
             var _msg = _clean_err.toString();
             show_debug_message(_msg);
             global.__gmlvm_last_error = _clean_err;
@@ -1069,6 +1087,7 @@ function gmlvm_preprocess(_code) {
     }
     
     ds_map_destroy(_macros);
+    _processed_code = string_replace_all(_processed_code, "\r", "");
     return _processed_code;
 }
 

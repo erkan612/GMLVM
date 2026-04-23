@@ -1430,34 +1430,81 @@ function gmlvm_vm(_ast, _self = self, _other = other) {
 //    }
 //}
 
+//function gmlvm_vm(_ast, _self = self, _other = other) {
+//    if (instance_exists(_self) || is_struct(_self)) {
+//        var _result;
+//        with (_self) {
+//            var _ctx = new gmlvm_vm_context(id, _other);
+//            _result = gmlvm_vm_evaluate(_ast, _ctx);
+//            
+//            if (is_struct(_result) && struct_exists(_result, "type")) {
+//                if (_result.type == "return") {
+//                    _result = _result.value;
+//                } else if (_result.type == "exit") {
+//                    _result = undefined;
+//                }
+//            }
+//        }
+//        return _result;
+//    }
+//    
+//    var _ctx = new gmlvm_vm_context(_self, _other);
+//    var _result = gmlvm_vm_evaluate(_ast, _ctx);
+//    
+//    if (is_struct(_result) && struct_exists(_result, "type")) {
+//        if (_result.type == "return") {
+//            return _result.value;
+//        } else if (_result.type == "exit") {
+//            return undefined;
+//        }
+//    }
+//    
+//    return _result;
+//}
+
 function gmlvm_vm(_ast, _self = self, _other = other) {
+    var _source = struct_exists(_ast, "source_code") ? _ast.source_code : "";
+    var _source_name = struct_exists(_ast, "source_name") ? _ast.source_name : "";
+    
     if (instance_exists(_self) || is_struct(_self)) {
         var _result;
         with (_self) {
             var _ctx = new gmlvm_vm_context(id, _other);
-            _result = gmlvm_vm_evaluate(_ast, _ctx);
-            
-            if (is_struct(_result) && struct_exists(_result, "type")) {
-                if (_result.type == "return") {
-                    _result = _result.value;
-                } else if (_result.type == "exit") {
-                    _result = undefined;
+            try {
+                _result = gmlvm_vm_evaluate(_ast, _ctx);
+                
+                if (is_struct(_result) && struct_exists(_result, "type")) {
+                    if (_result.type == "return") {
+                        _result = _result.value;
+                    } else if (_result.type == "exit") {
+                        _result = undefined;
+                    }
                 }
+            } catch (_err) {
+                _result = undefined;
+                var _formatted_error = format_error_with_source(_err, _source, _source_name);
+                show_debug_message(_formatted_error);
             }
         }
         return _result;
     }
     
     var _ctx = new gmlvm_vm_context(_self, _other);
-    var _result = gmlvm_vm_evaluate(_ast, _ctx);
-    
-    if (is_struct(_result) && struct_exists(_result, "type")) {
-        if (_result.type == "return") {
-            return _result.value;
-        } else if (_result.type == "exit") {
-            return undefined;
+    try {
+        var _result = gmlvm_vm_evaluate(_ast, _ctx);
+        
+        if (is_struct(_result) && struct_exists(_result, "type")) {
+            if (_result.type == "return") {
+                return _result.value;
+            } else if (_result.type == "exit") {
+                return undefined;
+            }
         }
+        
+        return _result;
+    } catch (_err) {
+        var _formatted_error = format_error_with_source(_err, _source, _source_name);
+        show_debug_message(_formatted_error);
+        return undefined;
     }
-    
-    return _result;
 }

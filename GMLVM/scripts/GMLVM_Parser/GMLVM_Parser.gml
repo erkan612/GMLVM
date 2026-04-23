@@ -1215,7 +1215,7 @@ function gmlvm_parse_block(_tokens, _pos) {
     return [new gmlvm_block_node(_stmts), _pos];
 }
 
-function gmlvm_parse(_tokens) {
+function gmlvm_parse(_tokens, _source_code = "", _source_name = "<script>") {
     var _stmts = [];
     var _pos   = 0;
     var _len   = array_length(_tokens);
@@ -1231,8 +1231,11 @@ function gmlvm_parse(_tokens) {
         if (_sr[1] == _pos) { _pos++; continue; }
         _pos = _sr[1];
     }
-
-    return new gmlvm_block_node(_stmts);
+	
+    var _ast = new gmlvm_block_node(_stmts);
+    _ast.source_code = _source_code;
+    _ast.source_name = _source_name;
+	return _ast;
 }
 
 function gmlvm_parse_cached(_code) {
@@ -1248,8 +1251,9 @@ function gmlvm_parse_cached(_code) {
     return _ast;
 }
 
-function gmlvm_parse_only(_code) {
+function gmlvm_parse_only(_code, _source_name = "<script>") {
     var _processed = gmlvm_preprocess(_code);
     var _tokens = gmlvm_tokenize(_processed);
-    return gmlvm_parse(_tokens);
+	
+    return gmlvm_parse(_tokens, _processed, _source_name);
 }
