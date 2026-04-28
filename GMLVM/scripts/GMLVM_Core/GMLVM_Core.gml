@@ -53,6 +53,61 @@ function gmlvm_init() {
 	global.__gmlvm_ast_cache = new gmlvm_cache();
 	global.__gmlvm_call_stack = [ ];
 	global.__gmlvm_error_formatter = gmlvm_error_formatter;
+	global.__gmlvm_override_functions = ds_map_create();
+	
+	// override functions
+	gmlvm_function_override("instanceof", function(_struct) {
+	    if (!is_struct(_struct)) return undefined;
+    
+	    if (struct_exists(_struct, "gmlvm_constructor")) {
+	        var _ctor = _struct.gmlvm_constructor;
+	        if (is_struct(_ctor) && struct_exists(_ctor, "__gmlvm_name")) {
+	            return _ctor.__gmlvm_name;
+	        }
+	    }
+    
+	    return "struct";
+	});
+	
+	gmlvm_function_override("is_instanceof", function(_struct, _constructor) {
+	    if (!is_struct(_struct)) return false;
+	    if (!is_struct(_constructor)) return false;
+    
+	    if (!struct_exists(_constructor, "__gmlvm_type")) return false;
+	    if (_constructor.__gmlvm_type != "function") return false;
+    
+	    if (struct_exists(_struct, "gmlvm_constructor")) {
+	        var _ctor = _struct.gmlvm_constructor;
+	        if (_ctor == _constructor) return true;
+        
+	        while (struct_exists(_ctor, "gmlvm_parent")) {
+	            _ctor = _ctor.gmlvm_parent;
+	            if (_ctor == _constructor) return true;
+	        }
+	    }
+	    return false;
+	});
+	
+	gmlvm_function_override("typeof", function(_val) {
+	    if (_val == undefined) return "undefined";
+	    if (is_real(_val)) return "number";
+	    if (is_string(_val)) return "string";
+	    if (is_array(_val)) return "array";
+	    if (is_struct(_val)) {
+	        if (struct_exists(_val, "__gmlvm_type") && _val.__gmlvm_type == "function") {
+	            return "method";
+	        }
+	        return "struct";
+	    }
+	    if (is_method(_val)) return "method";
+	    if (is_bool(_val)) return "number";
+    
+	    return "unknown";
+	});
+}
+
+function gmlvm_function_override(_name, _func) {
+	global.__gmlvm_override_functions[? _name] = _func;
 }
 
 function gmlvm_push_call_stack(_name, _line) {

@@ -1115,90 +1115,17 @@ function gmlvm_vm_builtin(_name) { // TODO: add more built in
     if (_name == "alarm_9") { _value = 9; return { found: _found, value: _value }; }
     if (_name == "alarm_10") { _value = 10; return { found: _found, value: _value }; }
     if (_name == "alarm_11") { _value = 11; return { found: _found, value: _value }; }
-    
-    // function overrides
-    //if (_name == "sqrt") { _value = sqrt; return { found: _found, value: _value }; }
-    //if (_name == "sin") { _value = sin; return { found: true, value: _value }; }
-    //if (_name == "cos") { _value = cos; return { found: true, value: _value }; }
-    //if (_name == "tan") { _value = tan; return { found: true, value: _value }; }
-    //if (_name == "power") { _value = power; return { found: true, value: _value }; }
-    //if (_name == "abs") { _value = abs; return { found: true, value: _value }; }
-    //if (_name == "round") { _value = round; return { found: true, value: _value }; }
-    //if (_name == "floor") { _value = floor; return { found: true, value: _value }; }
-    //if (_name == "ceil") { _value = ceil; return { found: true, value: _value }; }
-    //if (_name == "random") { _value = random; return { found: true, value: _value }; }
-    //if (_name == "irandom") { _value = irandom; return { found: true, value: _value }; }
-    //if (_name == "string") { _value = string; return { found: true, value: _value }; }
-    //if (_name == "real") { _value = real; return { found: true, value: _value }; }
-    //if (_name == "is_string") { _value = is_string; return { found: true, value: _value }; }
-    //if (_name == "is_real") { _value = is_real; return { found: true, value: _value }; }
-    //if (_name == "is_array") { _value = is_array; return { found: true, value: _value }; }
-    //if (_name == "is_struct") { _value = is_struct; return { found: true, value: _value }; }
-    //if (_name == "array_length") { _value = array_length; return { found: true, value: _value }; }
-    //if (_name == "struct_get_names") { _value = struct_get_names; return { found: true, value: _value }; }
-    //if (_name == "struct_exists") { _value = struct_exists; return { found: true, value: _value }; }
-    //if (_name == "show_debug_message") { _value = show_debug_message; return { found: true, value: _value }; }
-    //if (_name == "struct_remove") { _value = struct_remove; return { found: true, value: _value }; }
-    //if (_name == "array_delete") { _value = array_delete; return { found: true, value: _value }; }
-    //if (_name == "is_bool") { _value = is_bool; return { found: true, value: _value }; }
-    //if (_name == "is_method") { _value = is_method; return { found: true, value: _value }; }
-    if (_name == "instanceof") {
-	    _value = function(_struct) {
-	        if (!is_struct(_struct)) return undefined;
-        
-	        // Check for gmlvm_constructor property
-	        if (struct_exists(_struct, "gmlvm_constructor")) {
-	            var _ctor = _struct.gmlvm_constructor;
-	            if (is_struct(_ctor) && struct_exists(_ctor, "__gmlvm_name")) {
-	                return _ctor.__gmlvm_name;
-	            }
-	        }
-        
-	        // Fallback - check if it's a plain struct
-	        return "struct";
-	    };
-	    return { found: true, value: _value };
-	}
-	if (_name == "is_instanceof") {
-	    _value = function(_struct, _constructor) {
-	        if (!is_struct(_struct)) return false;
-	        if (!is_struct(_constructor)) return false;
-        
-	        if (!struct_exists(_constructor, "__gmlvm_type")) return false;
-	        if (_constructor.__gmlvm_type != "function") return false;
-        
-	        if (struct_exists(_struct, "gmlvm_constructor")) {
-	            var _ctor = _struct.gmlvm_constructor;
-	            if (_ctor == _constructor) return true;
-            
-	            while (struct_exists(_ctor, "gmlvm_parent")) {
-	                _ctor = _ctor.gmlvm_parent;
-	                if (_ctor == _constructor) return true;
-	            }
-	        }
-	        return false;
-	    };
-	    return { found: true, value: _value };
-	}
-	if (_name == "typeof") {
-	    _value = function(_val) {
-	        if (_val == undefined) return "undefined";
-	        if (is_real(_val)) return "number";
-	        if (is_string(_val)) return "string";
-	        if (is_array(_val)) return "array";
-	        if (is_struct(_val)) {
-	            if (struct_exists(_val, "__gmlvm_type") && _val.__gmlvm_type == "function") {
-	                return "method";
-	            }
-	            return "struct";
-	        }
-	        if (is_method(_val)) return "method";
-	        if (is_bool(_val)) return "number";  // GML treats bool as number
-        
-	        return "unknown";
-	    };
-	    return { found: true, value: _value };
-	}
+	
+	// loop trough override functions
+	var override_keys = ds_map_keys_to_array(global.__gmlvm_override_functions);
+	for (var i = 0; i < array_length(override_keys); i++) {
+		var key = override_keys[i];
+		var func = global.__gmlvm_override_functions[? key];
+		if (_name == key) {
+			_value = func;
+			return { found: true, value: _value };
+		};
+	};
 	
     // Try asset index
     _value = real(asset_get_index(_name));
