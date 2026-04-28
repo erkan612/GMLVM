@@ -106,6 +106,27 @@ function gmlvm_init() {
 	});
 }
 
+function gmlvm_cleanup() {
+    global.__gmlvm_call_stack = [];
+    
+    global.__gmlvm_static_registry = {};
+    
+    global.__gmlvm_warning_collector.Clear();
+    
+    global.__gmlvm_ast_cache.Clear();
+	global.__gmlvm_ast_cache.Destroy();
+	
+    global.__gmlvm_last_error = undefined;
+    global.__gmlvm_last_source = "";
+    global.__gmlvm_last_source_name = "";
+    
+    global.__gmlvm_warnings = {};
+    
+    global.__gmlvm_call_stack = [];
+	
+	ds_map_destroy(global.__gmlvm_override_functions);
+}
+
 function gmlvm_function_override(_name, _func) {
 	global.__gmlvm_override_functions[? _name] = _func;
 }
